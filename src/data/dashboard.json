@@ -1,0 +1,12 @@
+{
+  "company": {
+    "name":                  "Renevise",
+    "officeStartTime":       "09:00",
+    "lateThresholdMinutes":  15,
+    "minHoursFullDay":       8.0,
+    "minHoursHalfDay":       4.5,
+    "workingDaysPerMonth":   26,
+    "breakMinutes":          60
+  },
+  "initialLeaveBalance": 12
+}

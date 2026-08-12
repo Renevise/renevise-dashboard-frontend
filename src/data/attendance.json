@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "description": "Attendance records are stored in localStorage under key hrms_attendance_v1. This file documents the schema only — no seed data.",
+  "schema": {
+    "id":           "string  — att_{clockInTimestamp}",
+    "employeeId":   "string  — from employees.json",
+    "employee":     "string  — employee display name",
+    "date":         "string  — YYYY-MM-DD (local time)",
+    "clockIn":      "string  — hh:mm AM/PM",
+    "clockOut":     "string  — hh:mm AM/PM",
+    "clockInMs":    "number  — epoch milliseconds",
+    "clockOutMs":   "number  — epoch milliseconds",
+    "breakMinutes": "number  — from company config",
+    "workedSeconds":"number  — clockOutMs - clockInMs",
+    "workedHours":  "number  — decimal (e.g. 8.5)",
+    "status":       "string  — Present | Late | Half Day"
+  }
+}

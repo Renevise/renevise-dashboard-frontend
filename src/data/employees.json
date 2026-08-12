@@ -1,0 +1,45 @@
+{
+  "currentEmployeeId": "EMP001",
+  "list": [
+    {
+      "id":           "EMP001",
+      "name":         "Hamid Laghari",
+      "role":         "Administrator",
+      "department":   "HR",
+      "email":        "hamid@renevise.com",
+      "totalLeaves":  21
+    },
+    {
+      "id":           "EMP002",
+      "name":         "Ayesha Siddiqui",
+      "role":         "Finance Manager",
+      "department":   "Finance",
+      "email":        "ayesha@renevise.com",
+      "totalLeaves":  21
+    },
+    {
+      "id":           "EMP003",
+      "name":         "Zain Abbas",
+      "role":         "IT Engineer",
+      "department":   "IT",
+      "email":        "zain@renevise.com",
+      "totalLeaves":  21
+    },
+    {
+      "id":           "EMP004",
+      "name":         "Sara Khan",
+      "role":         "Marketing Lead",
+      "department":   "Marketing",
+      "email":        "sara@renevise.com",
+      "totalLeaves":  21
+    },
+    {
+      "id":           "EMP005",
+      "name":         "Omar Farooq",
+      "role":         "Operations Manager",
+      "department":   "Operations",
+      "email":        "omar@renevise.com",
+      "totalLeaves":  21
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --royal-blue:    #1F3BFF;
+  --electric-blue: #3E6BFF;
+  --indigo:        #3B2FFF;
+  --deep-navy:     #071224;
+  --midnight:      #0B1738;
+  --cyan:          #5EA8FF;
+  --bg-card:       #0E1A34;
+  --bg-sidebar:    #050B18;
+  --border:        rgba(62, 107, 255, 0.15);
+  --text-primary:  #FFFFFF;
+  --text-secondary:rgba(255,255,255,0.55);
+  --text-muted:    rgba(94,168,255,0.6);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+body {
+  background: var(--deep-navy);
+  font-family: 'Inter', sans-serif;
+  color: var(--text-primary);
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-sidebar); }
+::-webkit-scrollbar-thumb { background: var(--electric-blue); border-radius: 4px; }
+
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-content {
+  margin-left: 265px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-width: 0;
+  max-width: calc(100% - 265px);
+  overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 56px;
+    max-width: calc(100% - 56px);
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    margin-left: 48px;
+    max-width: calc(100% - 48px);
+  }
+}
