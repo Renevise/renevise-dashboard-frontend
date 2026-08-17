@@ -92,7 +92,7 @@ function NotificationPanel({ notifications, unreadCount, markAsRead, markAllAsRe
 
 function TopNavbar() {
     const { pathname }        = useLocation();
-    const { currentEmployee, notifications: notifCtx } = useApp();
+    const { currentEmployee, notifications: notifCtx, setSidebarOpen } = useApp();
     const [now, setNow]       = useState(new Date());
     const [open, setOpen]     = useState(false);
     const bellRef             = useRef(null);
@@ -124,6 +124,10 @@ function TopNavbar() {
 
     return (
         <header className="topnav">
+
+            <button className="topnav-menu-btn" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
+                <span /><span /><span />
+            </button>
 
             <div className="topnav-left">
                 <h1 className="topnav-title">{title}</h1>

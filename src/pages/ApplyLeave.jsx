@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-    FaCloudUploadAlt, FaPaperclip, FaTimes, FaCheckCircle, FaHistory,
+    FaArrowLeft, FaCloudUploadAlt, FaPaperclip, FaTimes, FaCheckCircle, FaHistory,
 } from "react-icons/fa";
 import leaveJson from "../data/leave.json";
 import { useApp } from "../context/AppContext";
@@ -21,6 +22,7 @@ function StatusBadge({ status }) {
 }
 
 function ApplyLeave() {
+    const navigate = useNavigate();
     const { leave }   = useApp();
     const { myLeaves, applyLeave } = leave;
 
@@ -91,6 +93,9 @@ function ApplyLeave() {
         <div className="al-page">
 
             <div className="al-page-header">
+                <button className="al-back-btn" onClick={() => navigate(-1)}>
+                    <FaArrowLeft size={14} />
+                </button>
                 <div>
                     <h2 className="al-page-title">Apply for Leave</h2>
                     <p className="al-page-sub">Submit a leave request for approval</p>

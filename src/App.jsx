@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AppContext }         from "./context/AppContext";
 import { useAttendance }      from "./hooks/useAttendance";
@@ -81,11 +81,20 @@ export function RoleRoute({ roles, children }) {
 function DashboardLayout({ attendance, leave, notifications, employees, companyOffs, clientOffs }) {
     const raw = getStoredUser();
     const currentEmployee = raw
-        ? { ...raw, name: raw.userName, id: raw.id ?? raw._id ?? "" }
+        ? {
+            ...raw,
+            name: (raw.firstName && raw.lastName)
+                ? `${raw.firstName} ${raw.lastName}`
+                : raw.userName,
+            id: raw.id ?? raw._id ?? "",
+          }
         : null;
 
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+
     return (
-        <AppContext.Provider value={{ attendance, leave, notifications, currentEmployee, employees, companyOffs, clientOffs }}>
+        <AppContext.Provider value={{ attendance, leave, notifications, currentEmployee, employees, companyOffs, clientOffs, sidebarOpen, setSidebarOpen, closeSidebar }}>
             <div className="app-layout">
                 <SideBar />
                 <div className="main-content">

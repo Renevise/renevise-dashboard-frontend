@@ -113,6 +113,18 @@ function Attendance() {
         return result;
     }, [mergedRecords, isAdmin, activeTab, selectedEmpId, search]);
 
+    const empDeptMap = useMemo(() => {
+        const m = {};
+        for (const e of employees) m[e._id] = e.department ?? "—";
+        return m;
+    }, [employees]);
+
+    const getRowDept = (row) => {
+        if (row.isCompanyOff) return "—";
+        if (isAdmin) return empDeptMap[row.employeeId] ?? "—";
+        return currentEmployee?.department ?? "—";
+    };
+
     const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
     const pageData   = filtered.slice((page - 1) * ROWS_PER_PAGE, page * ROWS_PER_PAGE);
 
@@ -138,9 +150,9 @@ function Attendance() {
     };
 
     const handleExport = () => {
-        const header  = ["Employee", "Date", "Clock In", "Clock Out", "Break", "Hours", "Status"];
+        const header  = ["Employee", "Department", "Date", "Clock In", "Clock Out", "Break", "Hours", "Status"];
         const rows    = filtered.map(r => [
-            r.employee, r.date, r.clockIn, r.clockOut,
+            r.employee, getRowDept(r), r.date, r.clockIn, r.clockOut,
             formatBreak(r.breakMinutes), formatHours(r.workedHours), r.status,
         ]);
         const csv  = [header, ...rows].map(r => r.join(",")).join("\n");
@@ -184,11 +196,15 @@ function Attendance() {
                             >
                                 <option value="">Select employee…</option>
                                 <option value={currentEmployee.id}>
-                                    {currentEmployee.name} (admin)
+                                    {currentEmployee.name} (admin){currentEmployee.department ? ` — ${currentEmployee.department}` : ""}
                                 </option>
-                                {employees.map(e => (
-                                    <option key={e._id} value={e._id}>{e.userName}</option>
-                                ))}
+                                {employees
+                                    .filter(e => e._id !== currentEmployee.id && e._id !== currentEmployee._id)
+                                    .map(e => (
+                                        <option key={e._id} value={e._id}>
+                                            {e.userName}{e.role === "admin" ? " (admin)" : ""}{e.department ? ` — ${e.department}` : ""}
+                                        </option>
+                                    ))}
                             </select>
                         )}
                     </div>
@@ -247,6 +263,7 @@ function Attendance() {
                         <thead>
                             <tr>
                                 <th>Employee</th>
+                                <th>Department</th>
                                 <th>Date</th>
                                 <th>Clock In</th>
                                 <th>Clock Out</th>
@@ -258,7 +275,7 @@ function Attendance() {
                         <tbody>
                             {pageData.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7}>
+                                    <td colSpan={8}>
                                         <div className="att-empty">
                                             <FaClockRotateLeft size={28} style={{ opacity: 0.25, marginBottom: 10 }} />
                                             <div>
@@ -272,8 +289,9 @@ function Attendance() {
                                 </tr>
                             ) : (
                                 pageData.map(row => (
-                                    <tr key={row.id} className={row.isCompanyOff ? "att-row-company-off" : ""}>
+                                    <tr key={row.id ?? row._id} className={row.isCompanyOff ? "att-row-company-off" : ""}>
                                         <td className="att-emp-name">{row.employee}</td>
+                                        <td>{getRowDept(row)}</td>
                                         <td>{row.date}</td>
                                         <td>{row.clockIn}</td>
                                         <td>{row.clockOut}</td>

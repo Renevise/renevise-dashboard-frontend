@@ -52,14 +52,14 @@ body {
 
 @media (max-width: 768px) {
   .main-content {
-    margin-left: 56px;
-    max-width: calc(100% - 56px);
+    margin-left: 0;
+    max-width: 100%;
   }
 }
 
 @media (max-width: 480px) {
   .main-content {
-    margin-left: 48px;
-    max-width: calc(100% - 48px);
+    margin-left: 0;
+    max-width: 100%;
   }
 }

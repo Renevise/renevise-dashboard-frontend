@@ -41,6 +41,35 @@
 .sidebar-brand {
   padding: 28px 20px 20px;
   border-bottom: 1px solid rgba(62, 107, 255, 0.12);
+  position: relative;
+}
+
+.sidebar-close-btn {
+  display: none;
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  background: rgba(62, 107, 255, 0.12);
+  border: 1px solid rgba(62, 107, 255, 0.25);
+  border-radius: 8px;
+  color: rgba(94, 168, 255, 0.8);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.sidebar-close-btn:hover {
+  background: rgba(62, 107, 255, 0.25);
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .sidebar-close-btn {
+    display: flex;
+  }
 }
 
 .sidebar-brand-logo {
@@ -240,118 +269,34 @@
 
 @media (max-width: 768px) {
   .sidebar {
-    width: 56px;
+    width: 265px;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 500;
   }
 
-  .sidebar-brand {
-    padding: 14px 6px 12px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+  .sidebar--open {
+    transform: translateX(0);
   }
 
-  .sidebar-brand-logo {
-    justify-content: center;
-    gap: 0;
-    margin-bottom: 0;
-  }
-
-  .brand-logo-img {
-    width: 34px;
-    height: 32px;
-  }
-
-  .brand-name,
-  .brand-subtitle,
-  .nav-section-label {
-    display: none;
-  }
-
-  .sidebar-nav {
-    padding: 0 4px;
-    gap: 4px;
-  }
-
-  .sidebar-nav .nav-link {
-    padding: 11px 0;
-    justify-content: center;
-    gap: 0;
-    font-size: 0;
-    border-radius: 12px;
-  }
-
-  .nav-icon {
-    font-size: 16px;
-  }
-
-  .reset-demo-wrap {
-    padding: 8px 4px 4px;
-  }
-
-  .reset-demo-btn {
-    font-size: 0;
-    padding: 9px;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto;
-  }
-
-  .sidebar-footer {
-    padding: 10px 6px;
-    justify-content: center;
-    gap: 0;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .user-info,
-  .settings-icon {
-    display: none;
-  }
-
-  .user-avatar {
-    width: 32px;
-    height: 32px;
-    font-size: 15px;
-  }
-
-  .logout-btn {
-    margin-top: 6px;
+  .sidebar-overlay {
+    display: block;
   }
 }
 
-@media (max-width: 480px) {
-  .sidebar {
-    width: 48px;
-  }
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 11, 24, 0.65);
+  backdrop-filter: blur(3px);
+  z-index: 499;
+  animation: overlay-fade 0.22s ease;
+}
 
-  .brand-logo-img {
-    width: 30px;
-    height: 28px;
-  }
-
-  .sidebar-nav .nav-link {
-    padding: 10px 0;
-  }
-
-  .nav-icon {
-    font-size: 15px;
-  }
-
-  .sidebar-footer {
-    padding: 8px 4px;
-  }
-
-  .user-avatar {
-    width: 28px;
-    height: 28px;
-    font-size: 13px;
-  }
+@keyframes overlay-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .logout-overlay {

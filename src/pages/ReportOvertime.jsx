@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { FaCheckCircle, FaHistory } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import { FaArrowLeft, FaCheckCircle, FaHistory } from "react-icons/fa";
 import "./ReportOvertime.css";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -19,7 +20,7 @@ function getStoredUser() {
     } catch { return null; }
 }
 
-const EMPTY_FORM = { onBehalf: "", requestedFor: "", date: "", extraHours: "", reason: "" };
+const EMPTY_FORM = { onBehalf: "", requestedForId: "", date: "", extraHours: "", reason: "" };
 
 function StatusBadge({ status }) {
     const map = { Approved: "ro-badge--approved", Rejected: "ro-badge--rejected", Pending: "ro-badge--pending" };
@@ -27,10 +28,11 @@ function StatusBadge({ status }) {
 }
 
 function ReportOvertime() {
+    const navigate = useNavigate();
     const user     = getStoredUser();
     const userName = user?.userName || "Unknown User";
 
-    const [form,       setForm]       = useState(EMPTY_FORM);
+    const [form,       setForm]       = useState({ ...EMPTY_FORM });
     const [errors,     setErrors]     = useState({});
     const [submitting, setSubmitting] = useState(false);
     const [apiError,   setApiError]   = useState("");
@@ -39,6 +41,9 @@ function ReportOvertime() {
     const [history,     setHistory]     = useState([]);
     const [histLoading, setHistLoading] = useState(true);
 
+    const [empList,     setEmpList]     = useState([]);
+    const [empLoadErr,  setEmpLoadErr]  = useState("");
+
     const fetchHistory = useCallback(async () => {
         try {
             const res = await fetch(`${API_BASE}/api/overtime/my`, { headers: getAuthHeaders() });
@@ -46,26 +51,50 @@ function ReportOvertime() {
                 const { overtimes } = await res.json();
                 setHistory(overtimes ?? []);
             }
-        } catch {  } finally {
+        } catch { } finally {
             setHistLoading(false);
         }
     }, []);
 
     useEffect(() => { fetchHistory(); }, [fetchHistory]);
 
+    useEffect(() => {
+        async function loadUsers() {
+            try {
+                const res = await fetch(`${API_BASE}/api/employees/names`, { headers: getAuthHeaders() });
+                const data = await res.json();
+                if (res.ok) {
+                    setEmpList(data.employees ?? []);
+                } else {
+                    setEmpLoadErr(data.message || `Failed to load users (${res.status})`);
+                }
+            } catch (err) {
+                setEmpLoadErr("Could not reach server. Check your connection.");
+            }
+        }
+        loadUsers();
+    }, []);
+
     function handleChange(e) {
         const { name, value } = e.target;
-        setForm(prev => ({ ...prev, [name]: value }));
+        if (name === "onBehalf") {
+            setForm(prev => ({ ...prev, onBehalf: value, requestedForId: "" }));
+        } else {
+            setForm(prev => ({ ...prev, [name]: value }));
+        }
         if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
     }
 
     function validate() {
         const errs = {};
-        if (!form.requestedFor.trim()) errs.requestedFor = "Please specify who this request is for";
-        if (!form.date)                errs.date         = "Date is required";
+        if (form.onBehalf === "Yes" && !form.requestedForId)
+            errs.requestedForId = "Please select the employee this request is for";
+        if (!form.date)
+            errs.date = "Date is required";
         if (!form.extraHours || isNaN(form.extraHours) || Number(form.extraHours) < 0.5)
             errs.extraHours = "Enter valid hours (minimum 0.5)";
-        if (!form.reason.trim())       errs.reason       = "Please describe the work that required overtime";
+        if (!form.reason.trim())
+            errs.reason = "Please describe the work that required overtime";
         return errs;
     }
 
@@ -78,20 +107,24 @@ function ReportOvertime() {
         setApiError("");
         setSuccessMsg("");
         try {
+            const payload = {
+                onBehalf  : form.onBehalf,
+                date      : form.date,
+                extraHours: Number(form.extraHours),
+                reason    : form.reason.trim(),
+            };
+            if (form.onBehalf === "Yes") {
+                payload.requestedForId = form.requestedForId;
+            }
+
             const res = await fetch(`${API_BASE}/api/overtime`, {
                 method : "POST",
                 headers: getAuthHeaders(),
-                body   : JSON.stringify({
-                    onBehalf    : form.onBehalf,
-                    requestedFor: form.requestedFor.trim(),
-                    date        : form.date,
-                    extraHours  : Number(form.extraHours),
-                    reason      : form.reason.trim(),
-                }),
+                body   : JSON.stringify(payload),
             });
             const data = await res.json();
             if (!res.ok) { setApiError(data.message || "Failed to submit request."); return; }
-            setForm(EMPTY_FORM);
+            setForm({ ...EMPTY_FORM });
             setErrors({});
             setSuccessMsg("Overtime request submitted successfully. Pending approval.");
             fetchHistory();
@@ -106,6 +139,9 @@ function ReportOvertime() {
         <div className="ro-page">
 
             <div className="ro-page-header">
+                <button className="ro-back-btn" onClick={() => navigate(-1)}>
+                    <FaArrowLeft size={14} />
+                </button>
                 <div>
                     <h2 className="ro-page-title">Report Overtime</h2>
                     <p className="ro-page-sub">Log extra hours worked beyond your regular shift</p>
@@ -153,10 +189,37 @@ function ReportOvertime() {
 
                             <div className="ro-field">
                                 <label className="ro-label">Requested For<span className="ro-asterisk"> *</span></label>
-                                <input type="text" name="requestedFor" value={form.requestedFor} onChange={handleChange}
-                                    placeholder="Enter employee name…"
-                                    className={`ro-input${errors.requestedFor ? " ro-input--err" : ""}`} />
-                                {errors.requestedFor && <span className="ro-field-error">{errors.requestedFor}</span>}
+
+                                {form.onBehalf !== "Yes" ? (
+                                    <div className="ro-readonly-field">
+                                        <div className="ro-requester-avatar">{userName.charAt(0).toUpperCase()}</div>
+                                        <span className="ro-requester-name">{userName}</span>
+                                        <span className="ro-self-tag">Self</span>
+                                    </div>
+                                ) : empLoadErr ? (
+                                    <span className="ro-field-error">{empLoadErr}</span>
+                                ) : (
+                                    <>
+                                        <select
+                                            name="requestedForId"
+                                            value={form.requestedForId}
+                                            onChange={handleChange}
+                                            className={`ro-select${errors.requestedForId ? " ro-input--err" : ""}`}
+                                        >
+                                            <option value="">-- Select Employee --</option>
+                                            {empList.map(e => (
+                                                <option key={e._id} value={e._id}>
+                                                    {e.userName}
+                                                    {e.email      ? ` — ${e.email}`      : ""}
+                                                    {e.department ? ` — ${e.department}` : ""}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {errors.requestedForId && (
+                                            <span className="ro-field-error">{errors.requestedForId}</span>
+                                        )}
+                                    </>
+                                )}
                             </div>
                         </div>
 
@@ -191,7 +254,7 @@ function ReportOvertime() {
 
                         <div className="ro-form-footer">
                             <button type="button" className="ro-reset-btn"
-                                onClick={() => { setForm(EMPTY_FORM); setErrors({}); setApiError(""); setSuccessMsg(""); }}>
+                                onClick={() => { setForm({ ...EMPTY_FORM }); setErrors({}); setApiError(""); setSuccessMsg(""); }}>
                                 Reset
                             </button>
                             <button type="submit" className="ro-submit-btn" disabled={submitting}>

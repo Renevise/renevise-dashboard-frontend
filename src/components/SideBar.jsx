@@ -4,18 +4,18 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
     FaTachometerAlt, FaClock, FaCalendarAlt,
     FaUserCircle, FaUsers, FaSignOutAlt, FaClipboardList, FaClipboardCheck,
-    FaInbox, FaUserSlash,
+    FaInbox, FaUserSlash, FaTimes,
 } from "react-icons/fa";
 import { useApp } from "../context/AppContext";
 
 const mainNav = [
     { to: "/dashboard",  icon: FaTachometerAlt, label: "Dashboard"  },
     { to: "/attendance", icon: FaClock,         label: "Attendance" },
-    { to: "/leave",      icon: FaCalendarAlt,   label: "Leave"      },
 ];
 
 const employeeNav = [
-    { to: "/my-requests", icon: FaInbox, label: "My Requests" },
+    { to: "/leave",       icon: FaCalendarAlt, label: "Leave"       },
+    { to: "/my-requests", icon: FaInbox,       label: "My Requests" },
 ];
 
 const adminNav = [
@@ -27,7 +27,7 @@ const adminNav = [
 ];
 
 function SideBar() {
-    const { currentEmployee } = useApp();
+    const { currentEmployee, sidebarOpen, closeSidebar } = useApp();
     const isAdmin  = currentEmployee?.role === "admin";
     const navigate = useNavigate();
     const [showConfirm, setShowConfirm] = useState(false);
@@ -38,8 +38,14 @@ function SideBar() {
         navigate("/login", { replace: true });
     }
 
+    function handleNavClick() {
+        closeSidebar();
+    }
+
     return (
-        <div className="sidebar">
+        <>
+        {sidebarOpen && <div className="sidebar-overlay" onClick={closeSidebar} />}
+        <div className={`sidebar${sidebarOpen ? " sidebar--open" : ""}`}>
             <div>
 
                 <div className="sidebar-brand">
@@ -48,13 +54,16 @@ function SideBar() {
                         <span className="brand-name">Renevise</span>
                     </div>
                     <div className="brand-subtitle">Human Resource Management</div>
+                    <button className="sidebar-close-btn" onClick={closeSidebar} aria-label="Close menu">
+                        <FaTimes size={14} />
+                    </button>
                 </div>
 
                 <div className="nav-section-label">Main Menu</div>
                 <ul className="sidebar-nav">
                     {mainNav.map(({ to, icon: Icon, label }) => (
                         <li key={to}>
-                            <NavLink to={to} className="nav-link">
+                            <NavLink to={to} className="nav-link" onClick={handleNavClick}>
                                 <Icon className="nav-icon" />
                                 {label}
                             </NavLink>
@@ -68,7 +77,7 @@ function SideBar() {
                         <ul className="sidebar-nav">
                             {employeeNav.map(({ to, icon: Icon, label }) => (
                                 <li key={to}>
-                                    <NavLink to={to} className="nav-link">
+                                    <NavLink to={to} className="nav-link" onClick={handleNavClick}>
                                         <Icon className="nav-icon" />
                                         {label}
                                     </NavLink>
@@ -84,7 +93,7 @@ function SideBar() {
                         <ul className="sidebar-nav">
                             {adminNav.map(({ to, icon: Icon, label }) => (
                                 <li key={to}>
-                                    <NavLink to={to} className="nav-link">
+                                    <NavLink to={to} className="nav-link" onClick={handleNavClick}>
                                         <Icon className="nav-icon" />
                                         {label}
                                     </NavLink>
@@ -136,6 +145,7 @@ function SideBar() {
                 </div>
             )}
         </div>
+        </>
     );
 }
 

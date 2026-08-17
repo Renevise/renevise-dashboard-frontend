@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-    FaCloudUploadAlt, FaPaperclip, FaTimes, FaCheckCircle, FaHistory,
+    FaArrowLeft, FaCloudUploadAlt, FaPaperclip, FaTimes, FaCheckCircle, FaHistory,
 } from "react-icons/fa";
 import "./AttendanceCorrection.css";
 
@@ -29,6 +30,7 @@ function StatusBadge({ status }) {
 }
 
 function AttendanceCorrection() {
+    const navigate = useNavigate();
     const user     = getStoredUser();
     const userName = user?.userName || "Unknown User";
 
@@ -114,6 +116,9 @@ function AttendanceCorrection() {
         <div className="ac-page">
 
             <div className="ac-page-header">
+                <button className="ac-back-btn" onClick={() => navigate(-1)}>
+                    <FaArrowLeft size={14} />
+                </button>
                 <div>
                     <h2 className="ac-page-title">Attendance Correction</h2>
                     <p className="ac-page-sub">Submit a correction request for a missed clock in or clock out</p>

@@ -2,13 +2,33 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     FaPlus, FaEdit, FaTrash, FaUsers, FaUserShield,
-    FaUser, FaTimes, FaCheckCircle, FaExclamationTriangle,
+    FaUser, FaTimes, FaCheckCircle, FaExclamationTriangle, FaEye, FaEyeSlash,
 } from "react-icons/fa";
 import "./EmployeeManagement.css";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const DEPARTMENTS = ["ServiceNow", "Web Development", "App Development", "AI Content Creation"];
-const EMPTY_FORM = { userName: "", email: "", password: "", role: "employee", department: "" };
+const EMPTY_FORM = { firstName: "", lastName: "", email: "", password: "", role: "employee", department: "" };
+
+function normalizePart(str) {
+    return str.trim().toLowerCase().replace(/\s+/g, "");
+}
+
+function previewUserName(firstName, lastName) {
+    const f = normalizePart(firstName);
+    const l = normalizePart(lastName);
+    return f && l ? `${f}.${l}` : "";
+}
+
+function validateEmailField(value) {
+    const v = value.trim();
+    if (!v) return "Email is required";
+    if (v.length > 254) return "Email address is too long";
+    if (!/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(v))
+        return "Enter a valid email (e.g. user@gmail.com)";
+    if (/\.{2,}/.test(v)) return "Email cannot contain consecutive dots";
+    return "";
+}
 
 function EmployeeManagement() {
     const navigate = useNavigate();
@@ -26,6 +46,7 @@ function EmployeeManagement() {
 
     const [confirmDel, setConfirmDel] = useState({ open: false, employee: null });
     const [deleting,   setDeleting]   = useState(false);
+    const [showEmpPw,  setShowEmpPw]  = useState(false);
 
     const [deptFilter, setDeptFilter] = useState("");
 
@@ -81,29 +102,28 @@ function EmployeeManagement() {
         setForm(EMPTY_FORM);
         setFormErrors({});
         setFormApiErr("");
+        setShowEmpPw(false);
         setModal({ open: true, mode: "add", employee: null });
     }
 
     function openEdit(emp) {
-        setForm({ userName: emp.userName, email: emp.email, password: "", role: emp.role, department: emp.department || "" });
+        setForm({
+            firstName:  emp.firstName || "",
+            lastName:   emp.lastName  || "",
+            email:      emp.email,
+            password:   "",
+            role:       emp.role,
+            department: emp.department || "",
+        });
         setFormErrors({});
         setFormApiErr("");
+        setShowEmpPw(false);
         setModal({ open: true, mode: "edit", employee: emp });
     }
 
     function closeModal() {
         if (submitting) return;
         setModal({ open: false, mode: "add", employee: null });
-    }
-
-    function validateEmailField(value) {
-        const v = value.trim();
-        if (!v) return "Email is required";
-        if (v.length > 254) return "Email address is too long";
-        if (!/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(v))
-            return "Enter a valid email (e.g. user@gmail.com)";
-        if (/\.{2,}/.test(v)) return "Email cannot contain consecutive dots";
-        return "";
     }
 
     function handleChange(e) {
@@ -122,7 +142,10 @@ function EmployeeManagement() {
 
     function validateForm() {
         const errs = {};
-        if (!form.userName.trim()) errs.userName = "Username is required";
+        if (!form.firstName.trim()) errs.firstName = "First name is required";
+        else if (form.firstName.trim().length < 2) errs.firstName = "Must be at least 2 characters";
+        if (!form.lastName.trim()) errs.lastName = "Last name is required";
+        else if (form.lastName.trim().length < 2) errs.lastName = "Must be at least 2 characters";
         const emailErr = validateEmailField(form.email);
         if (emailErr) errs.email = emailErr;
         if (modal.mode === "add") {
@@ -146,8 +169,8 @@ function EmployeeManagement() {
         const path   = isEdit ? `/api/employees/${modal.employee._id}` : "/api/employees";
         const method = isEdit ? "PUT" : "POST";
         const body   = isEdit
-            ? { userName: form.userName.trim(), email: form.email.trim(), role: form.role, department: form.department }
-            : { userName: form.userName.trim(), email: form.email.trim(), password: form.password, role: form.role, department: form.department };
+            ? { firstName: form.firstName.trim(), lastName: form.lastName.trim(), email: form.email.trim(), role: form.role, department: form.department }
+            : { firstName: form.firstName.trim(), lastName: form.lastName.trim(), email: form.email.trim(), password: form.password, role: form.role, department: form.department };
 
         const res = await apiFetch(path, { method, body: JSON.stringify(body) });
         if (!res) { setSubmitting(false); return; }
@@ -203,6 +226,8 @@ function EmployeeManagement() {
     const totalCount = filteredEmployees.length;
     const adminCount = filteredEmployees.filter(e => e.role === "admin").length;
     const empCount   = filteredEmployees.filter(e => e.role === "employee").length;
+
+    const usernamePreview = previewUserName(form.firstName, form.lastName);
 
     return (
         <div className="emp-page">
@@ -282,9 +307,7 @@ function EmployeeManagement() {
                     </select>
                 </div>
 
-                {loading && (
-                    <div className="emp-state-msg">Loading employees…</div>
-                )}
+                {loading && <div className="emp-state-msg">Loading employees…</div>}
 
                 {!loading && pageError && (
                     <div className="emp-state-msg emp-state-msg--error">{pageError}</div>
@@ -301,7 +324,7 @@ function EmployeeManagement() {
                         <table className="emp-table">
                             <thead>
                                 <tr>
-                                    <th>Username</th>
+                                    <th>Name</th>
                                     <th>Email</th>
                                     <th>Department</th>
                                     <th>Role</th>
@@ -317,7 +340,14 @@ function EmployeeManagement() {
                                     </tr>
                                 ) : filteredEmployees.map(emp => (
                                     <tr key={emp._id}>
-                                        <td className="emp-td-name">{emp.userName}</td>
+                                        <td className="emp-td-name">
+                                            {emp.firstName && emp.lastName
+                                                ? `${emp.firstName} ${emp.lastName}`
+                                                : emp.userName}
+                                            <div style={{ fontSize: "11px", color: "#888", marginTop: "2px" }}>
+                                                {emp.userName}
+                                            </div>
+                                        </td>
                                         <td className="emp-td-email">{emp.email}</td>
                                         <td className="emp-td-dept">{emp.department || "—"}</td>
                                         <td>
@@ -327,16 +357,10 @@ function EmployeeManagement() {
                                         </td>
                                         <td>
                                             <div className="emp-row-actions">
-                                                <button
-                                                    className="emp-edit-btn"
-                                                    onClick={() => openEdit(emp)}
-                                                >
+                                                <button className="emp-edit-btn" onClick={() => openEdit(emp)}>
                                                     <FaEdit size={12} /> Edit
                                                 </button>
-                                                <button
-                                                    className="emp-delete-btn"
-                                                    onClick={() => openConfirmDelete(emp)}
-                                                >
+                                                <button className="emp-delete-btn" onClick={() => openConfirmDelete(emp)}>
                                                     <FaTrash size={11} /> Delete
                                                 </button>
                                             </div>
@@ -363,26 +387,51 @@ function EmployeeManagement() {
                             </button>
                         </div>
 
-                        {formApiErr && (
-                            <div className="emp-api-error">{formApiErr}</div>
-                        )}
+                        {formApiErr && <div className="emp-api-error">{formApiErr}</div>}
 
                         <form onSubmit={handleSubmit} noValidate>
-                            <div className="emp-form-group">
-                                <label className="emp-form-label">Username</label>
-                                <input
-                                    type="text"
-                                    name="userName"
-                                    value={form.userName}
-                                    onChange={handleChange}
-                                    className={`emp-form-input${formErrors.userName ? " emp-input-error" : ""}`}
-                                    placeholder="John Doe"
-                                    autoComplete="off"
-                                />
-                                {formErrors.userName && (
-                                    <span className="emp-field-error">{formErrors.userName}</span>
-                                )}
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 12px" }}>
+                                <div className="emp-form-group">
+                                    <label className="emp-form-label">First Name</label>
+                                    <input
+                                        type="text"
+                                        name="firstName"
+                                        value={form.firstName}
+                                        onChange={handleChange}
+                                        className={`emp-form-input${formErrors.firstName ? " emp-input-error" : ""}`}
+                                        placeholder="Abdul"
+                                        autoComplete="off"
+                                    />
+                                    {formErrors.firstName && (
+                                        <span className="emp-field-error">{formErrors.firstName}</span>
+                                    )}
+                                </div>
+
+                                <div className="emp-form-group">
+                                    <label className="emp-form-label">Last Name</label>
+                                    <input
+                                        type="text"
+                                        name="lastName"
+                                        value={form.lastName}
+                                        onChange={handleChange}
+                                        className={`emp-form-input${formErrors.lastName ? " emp-input-error" : ""}`}
+                                        placeholder="Ahad"
+                                        autoComplete="off"
+                                    />
+                                    {formErrors.lastName && (
+                                        <span className="emp-field-error">{formErrors.lastName}</span>
+                                    )}
+                                </div>
                             </div>
+
+                            {usernamePreview && (
+                                <div className="emp-form-group" style={{ marginTop: "-4px" }}>
+                                    <p style={{ fontSize: "12px", color: "#888", margin: "0 0 10px" }}>
+                                        Username:{" "}
+                                        <strong style={{ color: "#5EA8FF" }}>{usernamePreview}</strong>
+                                    </p>
+                                </div>
+                            )}
 
                             <div className="emp-form-group">
                                 <label className="emp-form-label">Email</label>
@@ -404,15 +453,20 @@ function EmployeeManagement() {
                             {modal.mode === "add" && (
                                 <div className="emp-form-group">
                                     <label className="emp-form-label">Temporary Password</label>
-                                    <input
-                                        type="password"
-                                        name="password"
-                                        value={form.password}
-                                        onChange={handleChange}
-                                        className={`emp-form-input${formErrors.password ? " emp-input-error" : ""}`}
-                                        placeholder="••••••••"
-                                        autoComplete="new-password"
-                                    />
+                                    <div className="pw-field">
+                                        <input
+                                            type={showEmpPw ? "text" : "password"}
+                                            name="password"
+                                            value={form.password}
+                                            onChange={handleChange}
+                                            className={`emp-form-input${formErrors.password ? " emp-input-error" : ""}`}
+                                            placeholder="••••••••"
+                                            autoComplete="new-password"
+                                        />
+                                        <button type="button" className="pw-toggle" onClick={() => setShowEmpPw(p => !p)} tabIndex={-1} aria-label={showEmpPw ? "Hide password" : "Show password"}>
+                                            {showEmpPw ? <FaEyeSlash size={15} /> : <FaEye size={15} />}
+                                        </button>
+                                    </div>
                                     {formErrors.password && (
                                         <span className="emp-field-error">{formErrors.password}</span>
                                     )}
@@ -488,7 +542,11 @@ function EmployeeManagement() {
                         <h3 className="emp-confirm-title">Delete Employee</h3>
                         <p className="emp-confirm-msg">
                             Are you sure you want to delete{" "}
-                            <strong>{confirmDel.employee?.userName}</strong>?{" "}
+                            <strong>
+                                {confirmDel.employee?.firstName && confirmDel.employee?.lastName
+                                    ? `${confirmDel.employee.firstName} ${confirmDel.employee.lastName}`
+                                    : confirmDel.employee?.userName}
+                            </strong>?{" "}
                             This action cannot be undone.
                         </p>
                         <div className="emp-modal-footer emp-modal-footer--center">

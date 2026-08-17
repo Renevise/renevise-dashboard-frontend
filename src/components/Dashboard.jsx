@@ -484,9 +484,8 @@ function Dashboard() {
     const [locType,      setLocType]      = useState("office");
     const [activeTab,    setActiveTab]    = useState("all");
     const [selectedEmpId,setSelectedEmpId]= useState("");
-    const [showTeamModal,       setShowTeamModal]       = useState(false);
-    const [showClientOffModal,  setShowClientOffModal]  = useState(false);
-    const [showCompanyOffModal, setShowCompanyOffModal] = useState(false);
+    const [showTeamModal,      setShowTeamModal]      = useState(false);
+    const [showClientOffModal, setShowClientOffModal] = useState(false);
     const [successMsg,      setSuccessMsg]      = useState(""); 
     const [clockOutLoading, setClockOutLoading] = useState(false);
     const [onBreak,         setOnBreak]         = useState(false);
@@ -660,9 +659,16 @@ function Dashboard() {
                                 onChange={e => setSelectedEmpId(e.target.value)}
                             >
                                 <option value="">Select employee…</option>
-                                {employees.map(e => (
-                                    <option key={e._id} value={e._id}>{e.userName}</option>
-                                ))}
+                                <option value={currentEmployee.id}>
+                                    {currentEmployee.name} (admin){currentEmployee.department ? ` — ${currentEmployee.department}` : ""}
+                                </option>
+                                {employees
+                                    .filter(e => e._id !== currentEmployee.id && e._id !== currentEmployee._id)
+                                    .map(e => (
+                                        <option key={e._id} value={e._id}>
+                                            {e.userName}{e.role === "admin" ? " (admin)" : ""}{e.department ? ` — ${e.department}` : ""}
+                                        </option>
+                                    ))}
                             </select>
                         )}
                     </div>
@@ -820,65 +826,50 @@ function Dashboard() {
                 </div>
             )}
 
-            {/* ── My Requests ── */}
-            <div className="actions-section-header">
-                <h3 className="card-title">My Requests</h3>
-            </div>
-            <div className="actions-grid">
-                {ACTIONS.map(({ label, desc, icon: Icon, color, path }) => (
-                    <button
-                        className="action-btn"
-                        key={label}
-                        style={{ "--ac": color }}
-                        onClick={() => path && navigate(path)}
-                    >
-                        <span className="action-icon-wrap" style={{ background: `${color}22` }}>
-                            <Icon size={18} style={{ color }} />
-                        </span>
-                        <span className="action-text">
-                            <span className="action-label">{label}</span>
-                            <span className="action-desc">{desc}</span>
-                        </span>
-                        <FaArrowRight size={11} className="action-arrow" />
-                    </button>
-                ))}
+            {/* ── My Requests (employees only) ── */}
+            {!isAdmin && (
+                <>
+                    <div className="actions-section-header">
+                        <h3 className="card-title">My Requests</h3>
+                    </div>
+                    <div className="actions-grid">
+                        {ACTIONS.map(({ label, desc, icon: Icon, color, path }) => (
+                            <button
+                                className="action-btn"
+                                key={label}
+                                style={{ "--ac": color }}
+                                onClick={() => path && navigate(path)}
+                            >
+                                <span className="action-icon-wrap" style={{ background: `${color}22` }}>
+                                    <Icon size={18} style={{ color }} />
+                                </span>
+                                <span className="action-text">
+                                    <span className="action-label">{label}</span>
+                                    <span className="action-desc">{desc}</span>
+                                </span>
+                                <FaArrowRight size={11} className="action-arrow" />
+                            </button>
+                        ))}
+                        <button
+                            className="action-btn"
+                            style={{ "--ac": "#EC4899" }}
+                            onClick={() => setShowClientOffModal(true)}
+                        >
+                            <span className="action-icon-wrap" style={{ background: "#EC489922" }}>
+                                <FaUsers size={18} style={{ color: "#EC4899" }} />
+                            </span>
+                            <span className="action-text">
+                                <span className="action-label">Client Off</span>
+                                <span className="action-desc">Mark a day as client off</span>
+                            </span>
+                            <FaArrowRight size={11} className="action-arrow" />
+                        </button>
+                    </div>
+                </>
+            )}
 
-                {/* Client Off — employees only */}
-                {!isAdmin && (
-                    <button
-                        className="action-btn"
-                        style={{ "--ac": "#EC4899" }}
-                        onClick={() => setShowClientOffModal(true)}
-                    >
-                        <span className="action-icon-wrap" style={{ background: "#EC489922" }}>
-                            <FaUsers size={18} style={{ color: "#EC4899" }} />
-                        </span>
-                        <span className="action-text">
-                            <span className="action-label">Client Off</span>
-                            <span className="action-desc">Mark a day as client off</span>
-                        </span>
-                        <FaArrowRight size={11} className="action-arrow" />
-                    </button>
-                )}
-
-                {/* Company Off — admin only */}
-                {isAdmin && (
-                    <button
-                        className="action-btn"
-                        style={{ "--ac": "#EF4444" }}
-                        onClick={() => setShowCompanyOffModal(true)}
-                    >
-                        <span className="action-icon-wrap" style={{ background: "#EF444422" }}>
-                            <FaBuilding size={18} style={{ color: "#EF4444" }} />
-                        </span>
-                        <span className="action-text">
-                            <span className="action-label">Company Off</span>
-                            <span className="action-desc">Create a company-wide off period</span>
-                        </span>
-                        <FaArrowRight size={11} className="action-arrow" />
-                    </button>
-                )}
-            </div>
+            {/* ── Company Off Management (admin only) ── */}
+            {isAdmin && <CompanyOffSection companyOffs={companyOffs} />}
 
             {/* Team Report Modal */}
             {showTeamModal && (
@@ -897,13 +888,6 @@ function Dashboard() {
                 />
             )}
 
-            {/* Company Off Modal — admin quick-create from actions grid */}
-            {showCompanyOffModal && (
-                <CompanyOffModal
-                    onClose={() => setShowCompanyOffModal(false)}
-                    onSubmit={companyOffs.createCompanyOff}
-                />
-            )}
         </div>
     );
 }
