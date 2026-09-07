@@ -23,6 +23,7 @@ const STAT_CONFIG = [
     { key: "leaveBalance",   label: "Yearly Balance", subFn: s => `Used: ${s.yearlyUsed ?? 0} / ${s.yearlyTotal ?? 12}`,     icon: FaUmbrellaBeach, color: "#06B6D4", glow: "rgba(6,182,212,0.25)"  },
     { key: "companyOff",     label: "Company Off",    subFn: () => "days this month",                                        icon: FaBuilding,      color: "#EF4444", glow: "rgba(239,68,68,0.25)"  },
     { key: "clientOff",      label: "Client Off",     subFn: () => "days this month",                                        icon: FaUsers,         color: "#EC4899", glow: "rgba(236,72,153,0.25)" },
+    { key: "overtimeHours",  label: "Overtime",       subFn: () => "hours approved this month",                               icon: FaBusinessTime,  color: "#14B8A6", glow: "rgba(20,184,166,0.25)"  },
 ];
 
 const ACTIONS = [
@@ -32,11 +33,11 @@ const ACTIONS = [
 ];
 
 function WeeklyPillars({ data, live }) {
-    const maxH = Math.max(...data.map(d => d.hours), 8);
+    const maxH = 9;
     return (
         <div className="weekly-pillars">
             {data.map(({ day, hours }) => {
-                const pct   = ((hours / maxH) * 100).toFixed(1);
+                const pct   = Math.min((hours / maxH) * 100, 100).toFixed(1);
                 const label = hours === 0 ? "–" : `${hours}h`;
                 return (
                     <div className="pillar-col" key={day}>
@@ -469,10 +470,12 @@ function ClientOffModal({ onClose, myClientOffs, submitClientOff }) {
 
 function Dashboard() {
     const navigate = useNavigate();
-    const { attendance, leave, currentEmployee, employees, companyOffs, clientOffs } = useApp();
+    const { attendance, leave, currentEmployee, employees, companyOffs, clientOffs, overtime } = useApp();
     const {
         isClockedIn, clockInMs, clockedInLocType,
         clockIn, clockOut, alreadyDone,
+        activeBreakStartMs, accumulatedBreakSec,
+        startBreak, endBreak,
     } = attendance;
     const {
         currentBalance, allLeaves,
@@ -481,17 +484,14 @@ function Dashboard() {
     const isAdmin = currentEmployee?.role === "admin";
 
     const [now,          setNow]          = useState(new Date());
-    const [locType,      setLocType]      = useState("office");
+    const [locType,      setLocType]      = useState("remote");
     const [activeTab,    setActiveTab]    = useState("all");
     const [selectedEmpId,setSelectedEmpId]= useState("");
     const [showTeamModal,      setShowTeamModal]      = useState(false);
     const [showClientOffModal, setShowClientOffModal] = useState(false);
-    const [successMsg,      setSuccessMsg]      = useState(""); 
+    const [successMsg,      setSuccessMsg]      = useState("");
+    const [clockInLoading,  setClockInLoading]  = useState(false);
     const [clockOutLoading, setClockOutLoading] = useState(false);
-    const [onBreak,         setOnBreak]         = useState(false);
-    const [breakStartSec,   setBreakStartSec]   = useState(null);
-    const [totalBreakSec,   setTotalBreakSec]   = useState(0);
-    const [frozenElapsed,   setFrozenElapsed]   = useState(0);
 
     useEffect(() => {
         const t = setInterval(() => setNow(new Date()), 1000);
@@ -506,12 +506,23 @@ function Dashboard() {
 
     const elapsed = useClock(isClockedIn, clockInMs);
 
-    const breakRunning   = onBreak && breakStartSec !== null
-        ? Math.floor(now.getTime() / 1000) - breakStartSec
+    // Derive break state entirely from DB fields — no localStorage needed
+    const onBreak      = activeBreakStartMs !== null;
+    const breakStartMs = onBreak ? activeBreakStartMs : null;
+
+    // Current break session running time (seconds)
+    const breakRunning = onBreak && breakStartMs !== null
+        ? Math.max(0, Math.floor((now.getTime() - breakStartMs) / 1000))
         : 0;
+
+    // Net worked time frozen at the moment the current break started
+    const frozenElapsed = onBreak && clockInMs && breakStartMs
+        ? Math.max(0, Math.floor((breakStartMs - clockInMs) / 1000) - accumulatedBreakSec)
+        : 0;
+
     const displayElapsed = onBreak
         ? frozenElapsed
-        : Math.max(0, elapsed - totalBreakSec);
+        : Math.max(0, elapsed - accumulatedBreakSec);
 
     const activeLocType = isClockedIn ? clockedInLocType : locType;
 
@@ -565,6 +576,9 @@ function Dashboard() {
     const empApprovedCount = empLeaves.filter(l => l.status === "Approved").length;
     const empRejectedCount = empLeaves.filter(l => l.status === "Rejected").length;
 
+    const overtimeEmpId = isAdmin ? viewEmpId : currentEmployee.id;
+    const overtimeHours = overtime?.getApprovedHoursThisMonth(currentYear, currentMonth, overtimeEmpId) ?? 0;
+
     const allStats = {
         ...viewStats,
         leaveBalance    : viewLeaveBalance,
@@ -573,41 +587,34 @@ function Dashboard() {
         yearlyTotal     : viewYearlyTotal,
         companyOff      : companyOffThisMonth,
         clientOff       : clientOffThisMonth,
+        overtimeHours,
     };
 
     const today          = todayISO();
     const empTodayRecord = attendance.records.find(r => r.date === today && r.employeeId === viewEmpId) ?? null;
 
     async function handleClockIn() {
+        if (clockInLoading) return;
+        setClockInLoading(true);
         const ok = await clockIn(locType);
+        setClockInLoading(false);
         if (ok) setSuccessMsg("in");
     }
 
     async function handleClockOut() {
         if (clockOutLoading) return;
-        const finalBreakSec = totalBreakSec + (onBreak && breakStartSec !== null ? breakRunning : 0);
-        setOnBreak(false);
-        setBreakStartSec(null);
-        setTotalBreakSec(0);
-        setFrozenElapsed(0);
         setClockOutLoading(true);
-        const result = await clockOut(finalBreakSec);
+        const result = await clockOut();
         setClockOutLoading(false);
         if (result) setSuccessMsg("out");
     }
 
-    function handleStartBreak() {
-        setFrozenElapsed(displayElapsed);
-        setBreakStartSec(Math.floor(now.getTime() / 1000));
-        setOnBreak(true);
+    async function handleStartBreak() {
+        await startBreak();
     }
 
-    function handleEndBreak() {
-        if (breakStartSec !== null) {
-            setTotalBreakSec(prev => prev + breakRunning);
-        }
-        setOnBreak(false);
-        setBreakStartSec(null);
+    async function handleEndBreak() {
+        await endBreak();
     }
 
     function getBadgeInfo() {
@@ -710,16 +717,8 @@ function Dashboard() {
 
                         <div className="location-toggle">
                             <button
-                                className={`loc-btn ${activeLocType === "office" ? "active" : ""}`}
-                                onClick={() => setLocType("office")}
-                                disabled={isClockedIn}
-                            >
-                                <FaBuilding size={11} /> Office
-                            </button>
-                            <button
-                                className={`loc-btn ${activeLocType === "remote" ? "active" : ""}`}
-                                onClick={() => setLocType("remote")}
-                                disabled={isClockedIn}
+                                className={`loc-btn active`}
+                                disabled={true}
                             >
                                 <FaHome size={11} /> Remote
                             </button>
@@ -735,6 +734,13 @@ function Dashboard() {
                     {isClockedIn ? (
                         <>
                             <button
+                                className="clockin-btn clocked"
+                                onClick={handleClockOut}
+                                disabled={clockOutLoading}
+                            >
+                                {clockOutLoading ? "Clocking out…" : "⏹  Clock Out"}
+                            </button>
+                            <button
                                 className={`break-btn ${onBreak ? "on-break" : ""}`}
                                 onClick={onBreak ? handleEndBreak : handleStartBreak}
                                 disabled={clockOutLoading}
@@ -742,17 +748,10 @@ function Dashboard() {
                                 <FaCoffee size={13} />
                                 {onBreak ? "End Break" : "Start Break"}
                             </button>
-                            <button
-                                className="clockin-btn clocked"
-                                onClick={handleClockOut}
-                                disabled={clockOutLoading}
-                            >
-                                {clockOutLoading ? "Clocking out…" : "⏹  Clock Out"}
-                            </button>
                         </>
                     ) : (
-                        <button className="clockin-btn" onClick={handleClockIn}>
-                            ▶&nbsp;&nbsp;Clock In
+                        <button className="clockin-btn" onClick={handleClockIn} disabled={clockInLoading}>
+                            {clockInLoading ? "Clocking in…" : "▶  Clock In"}
                         </button>
                     )}
                 </div>

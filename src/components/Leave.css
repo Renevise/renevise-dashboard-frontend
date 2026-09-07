@@ -416,6 +416,12 @@
   border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
+.lv-badge.expired {
+  background: rgba(107, 114, 128, 0.13);
+  color: #9CA3AF;
+  border: 1px solid rgba(107, 114, 128, 0.25);
+}
+
 .lv-filter-bar {
   display: flex;
   align-items: center;

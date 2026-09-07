@@ -202,6 +202,7 @@
 .cm-badge--pending  { background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.3); color: #fbbf24; }
 .cm-badge--approved { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); color: #34d399; }
 .cm-badge--rejected { background: rgba(239,68,68,0.12);  border: 1px solid rgba(239,68,68,0.3);  color: #f87171; }
+.cm-badge--expired  { background: rgba(107,114,128,0.12); border: 1px solid rgba(107,114,128,0.25); color: #9ca3af; }
 
 .cm-table-card {
   background: rgba(11, 23, 56, 0.6);

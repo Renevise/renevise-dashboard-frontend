@@ -18,10 +18,10 @@ const PAGE_TITLES = {
     "/overtime-management"   : "Overtime Management",
 };
 
-function formatZoneTime(date, offsetHours) {
-    const utcMs = date.getTime() + date.getTimezoneOffset() * 60000;
-    const zoned = new Date(utcMs + 3600000 * offsetHours);
-    return zoned.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+function formatZoneTime(date, timezone) {
+    return date.toLocaleTimeString("en-US", {
+        hour: "2-digit", minute: "2-digit", hour12: true, timeZone: timezone,
+    });
 }
 
 function timeAgo(dateStr) {
@@ -140,12 +140,12 @@ function TopNavbar() {
                 <div className="nav-tz-wrap">
                     <div className="nav-tz">
                         <span className="nav-tz-label">PKT</span>
-                        <span className="nav-tz-time">{formatZoneTime(now, 5)}</span>
+                        <span className="nav-tz-time">{formatZoneTime(now, "Asia/Karachi")}</span>
                     </div>
                     <div className="nav-tz-sep" />
                     <div className="nav-tz">
                         <span className="nav-tz-label">EST</span>
-                        <span className="nav-tz-time">{formatZoneTime(now, -5)}</span>
+                        <span className="nav-tz-time">{formatZoneTime(now, "America/New_York")}</span>
                     </div>
                 </div>
                 <div className="nav-date">{today}</div>

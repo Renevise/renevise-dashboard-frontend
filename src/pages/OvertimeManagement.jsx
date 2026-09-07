@@ -20,6 +20,7 @@ function StatusBadge({ status }) {
         Approved: "om-badge--approved",
         Rejected: "om-badge--rejected",
         Pending : "om-badge--pending",
+        Expired : "om-badge--expired",
     };
     return <span className={`om-badge ${map[status] || "om-badge--pending"}`}>{status}</span>;
 }
@@ -118,7 +119,7 @@ function ReviewedTable({ list }) {
     return (
         <div className="om-table-card">
             <div className="om-table-card-header">
-                <h3 className="om-table-title">Approved &amp; Rejected Records</h3>
+                <h3 className="om-table-title">Approved, Rejected &amp; Expired Records</h3>
                 <p className="om-table-sub">{list.length} record{list.length !== 1 ? "s" : ""}</p>
             </div>
 
@@ -265,6 +266,7 @@ function OvertimeManagement() {
     const pendingList  = filtered.filter(o => o.status === "Pending");
     const reviewedList = filtered.filter(o => o.status !== "Pending");
 
+
     if (loading) {
         return (
             <div className="om-page">
@@ -331,7 +333,7 @@ function OvertimeManagement() {
 
             <section className="om-section">
                 <div className="om-section-header">
-                    <h3 className="om-section-title">Approved &amp; Rejected</h3>
+                    <h3 className="om-section-title">Approved, Rejected &amp; Expired</h3>
                     {reviewedList.length > 0 && (
                         <span className="om-count">{reviewedList.length} record{reviewedList.length !== 1 ? "s" : ""}</span>
                     )}

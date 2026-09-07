@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 import { AppContext }         from "./context/AppContext";
 import { useAttendance }      from "./hooks/useAttendance";
 import { useLeave }           from "./hooks/useLeave";
@@ -7,6 +7,7 @@ import { useNotifications }   from "./hooks/useNotifications";
 import { useEmployees }       from "./hooks/useEmployees";
 import { useCompanyOffs }    from "./hooks/useCompanyOffs";
 import { useClientOffs }    from "./hooks/useClientOffs";
+import { useOvertime }      from "./hooks/useOvertime";
 import SideBar        from "./components/SideBar";
 import TopNavbar      from "./components/TopNavbar";
 import Dashboard      from "./components/Dashboard";
@@ -25,6 +26,8 @@ import ReportOvertime        from "./pages/ReportOvertime";
 import MyRequests            from "./pages/MyRequests";
 import TeamReport            from "./pages/TeamReport";
 import ClientOffManagement  from "./pages/ClientOffManagement";
+import Profile               from "./pages/Profile";
+import AttendanceRemarks     from "./pages/AttendanceRemarks";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -38,7 +41,21 @@ function getStoredUser() {
 }
 
 function isAuthenticated() {
-    return !!localStorage.getItem("token") && !!getStoredUser();
+    const token = localStorage.getItem("token");
+    if (!token || !getStoredUser()) return false;
+    try {
+        const { exp } = JSON.parse(atob(token.split(".")[1]));
+        if (exp && Date.now() / 1000 > exp) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            return false;
+        }
+    } catch {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        return false;
+    }
+    return true;
 }
 
 function AuthenticatedRoute({ children }) {
@@ -78,7 +95,7 @@ export function RoleRoute({ roles, children }) {
     return children;
 }
 
-function DashboardLayout({ attendance, leave, notifications, employees, companyOffs, clientOffs }) {
+function DashboardLayout({ attendance, leave, notifications, employees, companyOffs, clientOffs, overtime }) {
     const raw = getStoredUser();
     const currentEmployee = raw
         ? {
@@ -94,7 +111,7 @@ function DashboardLayout({ attendance, leave, notifications, employees, companyO
     const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
     return (
-        <AppContext.Provider value={{ attendance, leave, notifications, currentEmployee, employees, companyOffs, clientOffs, sidebarOpen, setSidebarOpen, closeSidebar }}>
+        <AppContext.Provider value={{ attendance, leave, notifications, currentEmployee, employees, companyOffs, clientOffs, overtime, sidebarOpen, setSidebarOpen, closeSidebar, updateRemarks: attendance.updateRemarks }}>
             <div className="app-layout">
                 <SideBar />
                 <div className="main-content">
@@ -107,12 +124,14 @@ function DashboardLayout({ attendance, leave, notifications, employees, companyO
 }
 
 function App() {
+    useLocation(); // re-render App on navigation so hooks re-read userId from localStorage
     const attendance    = useAttendance();
     const leave         = useLeave();
     const notifications = useNotifications();
     const { employees } = useEmployees();
     const companyOffs   = useCompanyOffs();
     const clientOffs    = useClientOffs();
+    const overtime      = useOvertime();
 
     return (
         <Routes>
@@ -130,18 +149,20 @@ function App() {
             <Route
                 element={
                     <PrivateRoute>
-                        <DashboardLayout attendance={attendance} leave={leave} notifications={notifications} employees={employees} companyOffs={companyOffs} clientOffs={clientOffs} />
+                        <DashboardLayout attendance={attendance} leave={leave} notifications={notifications} employees={employees} companyOffs={companyOffs} clientOffs={clientOffs} overtime={overtime} />
                     </PrivateRoute>
                 }
             >
                 <Route path="/"                      element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard"             element={<Dashboard />} />
-                <Route path="/attendance"            element={<Attendance />} />
+                <Route path="/attendance"             element={<Attendance />} />
+                <Route path="/attendance-remarks"    element={<AttendanceRemarks />} />
                 <Route path="/leave"                 element={<Leave />} />
                 <Route path="/my-requests"           element={<MyRequests />} />
                 <Route path="/apply-leave"           element={<ApplyLeave />} />
                 <Route path="/attendance-correction" element={<AttendanceCorrection />} />
                 <Route path="/report-overtime"       element={<ReportOvertime />} />
+                <Route path="/profile"               element={<Profile />} />
 
                 <Route
                     path="/team-report"

@@ -64,9 +64,9 @@
 
 .topnav-right {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  gap: 18px;
   flex-shrink: 0;
 }
 
@@ -124,12 +124,10 @@
   font-family: 'Inter', sans-serif;
   letter-spacing: 0.3px;
   text-align: right;
-  margin-top: 4px;
 }
 
 .notif-bell-wrap {
   position: relative;
-  margin-top: 6px;
 }
 
 .notif-bell-btn {

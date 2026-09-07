@@ -10,7 +10,7 @@ import { calcLeaveStats } from "../utils/leave";
 const ROWS_PER_PAGE = 10;
 
 function StatusBadge({ status }) {
-    const cls = { Approved: "approved", Rejected: "rejected", Pending: "pending" }[status] || "pending";
+    const cls = { Approved: "approved", Rejected: "rejected", Pending: "pending", Expired: "expired" }[status] || "pending";
     return <span className={`lv-badge ${cls}`}>{status}</span>;
 }
 
@@ -66,7 +66,7 @@ function AdminReviewedTable({ list }) {
         <div className="lv-table-card">
             <div className="lv-reviewed-table-header">
                 <div>
-                    <h3 className="lv-reviewed-table-title">Approved &amp; Rejected Records</h3>
+                    <h3 className="lv-reviewed-table-title">Approved, Rejected &amp; Expired Records</h3>
                     <p className="lv-reviewed-table-sub">
                         {list.length} record{list.length !== 1 ? "s" : ""}
                     </p>
@@ -369,7 +369,7 @@ function Leave() {
             <section className="lv-section">
                 <div className="lv-section-header">
                     <h3 className="lv-section-title">
-                        {isAdmin ? "Approved & Rejected" : "My Leave History"}
+                        {isAdmin ? "Approved, Rejected & Expired" : "My Leave History"}
                     </h3>
                     {filteredReviewed.length > 0 && (
                         <span className="lv-count">

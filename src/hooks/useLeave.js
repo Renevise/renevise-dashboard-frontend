@@ -69,8 +69,11 @@ export function useLeave() {
 
         async function init() {
             setLoading(true);
-            await fetchMyLeaves();
-            if (isAdmin) await fetchAllLeaves();
+            if (isAdmin) {
+                await Promise.all([fetchMyLeaves(), fetchAllLeaves()]);
+            } else {
+                await fetchMyLeaves();
+            }
             setLoading(false);
         }
         init();

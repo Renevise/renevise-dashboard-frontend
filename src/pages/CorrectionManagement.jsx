@@ -20,6 +20,7 @@ function StatusBadge({ status }) {
         Approved: "cm-badge--approved",
         Rejected: "cm-badge--rejected",
         Pending : "cm-badge--pending",
+        Expired : "cm-badge--expired",
     };
     return <span className={`cm-badge ${map[status] || "cm-badge--pending"}`}>{status}</span>;
 }
@@ -110,7 +111,7 @@ function ReviewedTable({ list }) {
     return (
         <div className="cm-table-card">
             <div className="cm-table-card-header">
-                <h3 className="cm-table-title">Approved &amp; Rejected Records</h3>
+                <h3 className="cm-table-title">Approved, Rejected &amp; Expired Records</h3>
                 <p className="cm-table-sub">{list.length} record{list.length !== 1 ? "s" : ""}</p>
             </div>
 
@@ -322,7 +323,7 @@ function CorrectionManagement() {
 
             <section className="cm-section">
                 <div className="cm-section-header">
-                    <h3 className="cm-section-title">Approved &amp; Rejected</h3>
+                    <h3 className="cm-section-title">Approved, Rejected &amp; Expired</h3>
                     {reviewedList.length > 0 && (
                         <span className="cm-count">{reviewedList.length} record{reviewedList.length !== 1 ? "s" : ""}</span>
                     )}

@@ -1,5 +1,3 @@
-
-
 const pad = n => String(n).padStart(2, "0");
 
 export function formatSeconds(totalSec) {
@@ -8,8 +6,10 @@ export function formatSeconds(totalSec) {
 }
 
 export function todayISO() {
-    const d = new Date();
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Karachi',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date());
 }
 
 export function currentMonthPrefix() {

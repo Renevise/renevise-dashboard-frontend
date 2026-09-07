@@ -166,6 +166,38 @@
 
 .att-search-clear:hover { color: rgba(255, 255, 255, 0.7); }
 
+.att-month-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(7, 18, 36, 0.8);
+  border: 1px solid rgba(62, 107, 255, 0.22);
+  border-radius: 12px;
+  padding: 10px 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.att-month-wrap:focus-within {
+  border-color: rgba(31, 59, 255, 0.5);
+  box-shadow: 0 0 0 3px rgba(31, 59, 255, 0.1);
+}
+.att-month-icon { color: rgba(94, 168, 255, 0.5); flex-shrink: 0; }
+.att-month-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #e2e8f0;
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  min-width: 120px;
+}
+.att-month-input::-webkit-calendar-picker-indicator {
+  filter: invert(0.6) sepia(1) saturate(2) hue-rotate(190deg);
+  cursor: pointer;
+  opacity: 0.7;
+}
+.att-month-input::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+
 .att-export-btn {
   display: flex;
   align-items: center;
@@ -281,7 +313,7 @@
   font-size: 14px !important;
 }
 
-.att-status-badge {
+.att-table-status-badge {
   display: inline-block;
   padding: 4px 12px;
   border-radius: 20px;
@@ -464,4 +496,28 @@
 
 .att-row-company-off td {
   background: rgba(99, 102, 241, 0.04);
+}
+
+
+/* ── Status cell with late dot ── */
+.att-status-cell {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: nowrap;
+}
+
+.att-late-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.2);
+  color: #F59E0B;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0;
+  flex-shrink: 0;
 }

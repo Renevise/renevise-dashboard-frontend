@@ -4,13 +4,15 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
     FaTachometerAlt, FaClock, FaCalendarAlt,
     FaUserCircle, FaUsers, FaSignOutAlt, FaClipboardList, FaClipboardCheck,
-    FaInbox, FaUserSlash, FaTimes,
+    FaInbox, FaUserSlash, FaTimes, FaIdCard, FaCommentAlt, FaPowerOff,
 } from "react-icons/fa";
 import { useApp } from "../context/AppContext";
 
 const mainNav = [
-    { to: "/dashboard",  icon: FaTachometerAlt, label: "Dashboard"  },
-    { to: "/attendance", icon: FaClock,         label: "Attendance" },
+    { to: "/dashboard",          icon: FaTachometerAlt, label: "Dashboard"           },
+    { to: "/attendance",         icon: FaClock,         label: "Attendance"          },
+    { to: "/attendance-remarks", icon: FaCommentAlt,    label: "Remarks"             },
+    { to: "/profile",            icon: FaIdCard,        label: "My Profile"          },
 ];
 
 const employeeNav = [
@@ -113,7 +115,7 @@ function SideBar() {
                     <span className="user-role">{currentEmployee.role}</span>
                 </div>
                 <button className="logout-btn" onClick={() => setShowConfirm(true)} title="Sign out">
-                    <FaSignOutAlt size={13} />
+                    <FaPowerOff size={17} />
                 </button>
             </div>
 

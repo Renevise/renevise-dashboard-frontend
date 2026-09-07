@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { computeStats, computeWeeklyHours } from "../utils/attendance";
 import { todayISO } from "../utils/time";
+import { apiFetch } from "../utils/api";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -42,6 +43,8 @@ function normalizeRecord(r) {
         workedHours  : r.workedHours   ?? 0,
         status       : r.status ?? "Present",
         locationType : r.locationType ?? "office",
+        isLate       : r.isLate ?? (r.status === "Late"),
+        adminRemarks : r.adminRemarks ?? null,
     };
 }
 
@@ -64,23 +67,26 @@ export function useAttendance() {
         async function init() {
             try {
                 const headers = getAuthHeaders();
+                const recordsEndpoint = isAdmin ? "/api/attendance/all" : "/api/attendance/my";
 
-                const todayRes = await fetch(`${API_BASE}/api/attendance/today-status`, { headers });
+                const [todayRes, allRes] = await Promise.all([
+                    apiFetch(`${API_BASE}/api/attendance/today-status`, { headers }),
+                    apiFetch(`${API_BASE}${recordsEndpoint}`, { headers }),
+                ]);
                 if (cancelled) return;
+
                 if (todayRes.ok) {
                     const { record } = await todayRes.json();
-                    if (cancelled) return;
-                    if (record && record.clockInMs && !record.clockOutMs) {
+                    if (!cancelled && record && record.clockInMs && !record.clockOutMs) {
                         setClockState({
-                            clockInMs   : record.clockInMs,
-                            locationType: record.locationType ?? "office",
+                            clockInMs          : record.clockInMs,
+                            locationType       : record.locationType ?? "office",
+                            activeBreakStartMs : record.activeBreakStartMs ?? null,
+                            accumulatedBreakSec: record.accumulatedBreakSec ?? 0,
                         });
                     }
                 }
 
-                const recordsEndpoint = isAdmin ? "/api/attendance/all" : "/api/attendance/my";
-                const allRes = await fetch(`${API_BASE}${recordsEndpoint}`, { headers });
-                if (cancelled) return;
                 if (allRes.ok) {
                     const { records: raw } = await allRes.json();
                     if (!cancelled) setRecords(raw.map(normalizeRecord));
@@ -95,7 +101,7 @@ export function useAttendance() {
 
     const clockIn = useCallback(async (locationType = "office") => {
         try {
-            const res = await fetch(`${API_BASE}/api/attendance/clock-in`, {
+            const res = await apiFetch(`${API_BASE}/api/attendance/clock-in`, {
                 method : "POST",
                 headers: getAuthHeaders(),
                 body   : JSON.stringify({ locationType }),
@@ -103,21 +109,23 @@ export function useAttendance() {
 
             if (res.status === 409) {
 
-                const todayRes = await fetch(`${API_BASE}/api/attendance/today-status`, {
+                const todayRes = await apiFetch(`${API_BASE}/api/attendance/today-status`, {
                     headers: getAuthHeaders(),
                 });
                 if (todayRes.ok) {
                     const { record } = await todayRes.json();
                     if (record && record.clockInMs && !record.clockOutMs) {
                         setClockState({
-                            clockInMs   : record.clockInMs,
-                            locationType: record.locationType ?? locationType,
+                            clockInMs          : record.clockInMs,
+                            locationType       : record.locationType ?? locationType,
+                            activeBreakStartMs : record.activeBreakStartMs ?? null,
+                            accumulatedBreakSec: record.accumulatedBreakSec ?? 0,
                         });
                         setRecords(prev => {
                             const normalized = normalizeRecord(record);
                             return [normalized, ...prev.filter(r => r.id !== normalized.id)];
                         });
-                        return true; 
+                        return true;
                     }
                 }
                 return false;
@@ -144,13 +152,78 @@ export function useAttendance() {
         }
     }, []);
 
-    const clockOut = useCallback(async (breakSec = 0) => {
-        if (!clockState) return null;
+    const startBreak = useCallback(async () => {
         try {
-            const res = await fetch(`${API_BASE}/api/attendance/clock-out`, {
+            const res = await apiFetch(`${API_BASE}/api/attendance/break-start`, {
                 method : "POST",
                 headers: getAuthHeaders(),
-                body   : JSON.stringify({ breakSec }),
+            });
+            if (!res.ok) {
+                const { message } = await res.json().catch(() => ({ message: "Unknown error" }));
+                console.error("Start break failed:", message);
+                return false;
+            }
+            const { record } = await res.json();
+            setClockState(prev => prev ? {
+                ...prev,
+                activeBreakStartMs : record.activeBreakStartMs,
+                accumulatedBreakSec: record.accumulatedBreakSec ?? 0,
+            } : null);
+            return true;
+        } catch (err) {
+            console.error("Start break error:", err);
+            return false;
+        }
+    }, []);
+
+    const endBreak = useCallback(async () => {
+        try {
+            const res = await apiFetch(`${API_BASE}/api/attendance/break-end`, {
+                method : "POST",
+                headers: getAuthHeaders(),
+            });
+            if (!res.ok) {
+                const { message } = await res.json().catch(() => ({ message: "Unknown error" }));
+                console.error("End break failed:", message);
+                return false;
+            }
+            const { record } = await res.json();
+            setClockState(prev => prev ? {
+                ...prev,
+                activeBreakStartMs : null,
+                accumulatedBreakSec: record.accumulatedBreakSec ?? 0,
+            } : null);
+            return true;
+        } catch (err) {
+            console.error("End break error:", err);
+            return false;
+        }
+    }, []);
+
+    const updateRemarks = useCallback(async (recordId, text) => {
+        try {
+            const res = await apiFetch(`${API_BASE}/api/attendance/${recordId}/remarks`, {
+                method : "PATCH",
+                headers: getAuthHeaders(),
+                body   : JSON.stringify({ adminRemarks: text || null }),
+            });
+            if (!res.ok) return false;
+            const { record } = await res.json();
+            const normalized = normalizeRecord(record);
+            setRecords(prev => prev.map(r => r.id === normalized.id ? normalized : r));
+            return true;
+        } catch {
+            return false;
+        }
+    }, []);
+
+    const clockOut = useCallback(async () => {
+        if (!clockState) return null;
+        try {
+            const res = await apiFetch(`${API_BASE}/api/attendance/clock-out`, {
+                method : "POST",
+                headers: getAuthHeaders(),
+                body   : JSON.stringify({}),
             });
             if (!res.ok) {
                 const { message } = await res.json().catch(() => ({ message: "Unknown error" }));
@@ -161,7 +234,7 @@ export function useAttendance() {
             const normalized = normalizeRecord(record);
 
             const endpoint = isAdmin ? "/api/attendance/all" : "/api/attendance/my";
-            const refetchRes = await fetch(`${API_BASE}${endpoint}`, { headers: getAuthHeaders() });
+            const refetchRes = await apiFetch(`${API_BASE}${endpoint}`, { headers: getAuthHeaders() });
             if (refetchRes.ok) {
                 const { records: fresh } = await refetchRes.json();
                 setRecords(fresh.map(normalizeRecord));
@@ -188,14 +261,19 @@ export function useAttendance() {
 
     return {
         records,
-        stats           : computeStats(records, isAdmin ? currentEmployee.id : null),
-        weeklyHours     : computeWeeklyHours(records, isAdmin ? currentEmployee.id : null),
+        stats              : computeStats(records, isAdmin ? currentEmployee.id : null),
+        weeklyHours        : computeWeeklyHours(records, isAdmin ? currentEmployee.id : null),
         isClockedIn,
-        clockInMs       : clockState?.clockInMs ?? null,
-        clockedInLocType: clockState?.locationType ?? "office",
+        clockInMs          : clockState?.clockInMs ?? null,
+        clockedInLocType   : clockState?.locationType ?? "office",
+        activeBreakStartMs : clockState?.activeBreakStartMs ?? null,
+        accumulatedBreakSec: clockState?.accumulatedBreakSec ?? 0,
         todayRecord,
         alreadyDone,
         clockIn,
         clockOut,
+        startBreak,
+        endBreak,
+        updateRemarks,
     };
 }

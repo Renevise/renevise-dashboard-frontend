@@ -230,7 +230,6 @@ function ReportOvertime() {
                                 <div className="ro-field">
                                     <label className="ro-label">Date of overtime<span className="ro-asterisk"> *</span></label>
                                     <input type="date" name="date" value={form.date} onChange={handleChange}
-                                        max={new Date().toISOString().split("T")[0]}
                                         className={`ro-input${errors.date ? " ro-input--err" : ""}`} />
                                     {errors.date && <span className="ro-field-error">{errors.date}</span>}
                                 </div>

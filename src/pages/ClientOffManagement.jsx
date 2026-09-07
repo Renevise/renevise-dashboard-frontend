@@ -20,6 +20,7 @@ function StatusBadge({ status }) {
         Approved: "com-badge--approved",
         Rejected: "com-badge--rejected",
         Pending : "com-badge--pending",
+        Expired : "com-badge--expired",
     };
     return <span className={`com-badge ${map[status] || "com-badge--pending"}`}>{status}</span>;
 }
@@ -108,7 +109,7 @@ function ReviewedTable({ list }) {
     return (
         <div className="com-table-card">
             <div className="com-table-card-header">
-                <h3 className="com-table-title">Approved &amp; Rejected Records</h3>
+                <h3 className="com-table-title">Approved, Rejected &amp; Expired Records</h3>
                 <p className="com-table-sub">{list.length} record{list.length !== 1 ? "s" : ""}</p>
             </div>
 
@@ -324,7 +325,7 @@ function ClientOffManagement() {
 
             <section className="com-section">
                 <div className="com-section-header">
-                    <h3 className="com-section-title">Approved &amp; Rejected</h3>
+                    <h3 className="com-section-title">Approved, Rejected &amp; Expired</h3>
                     {reviewedList.length > 0 && (
                         <span className="com-count">{reviewedList.length} record{reviewedList.length !== 1 ? "s" : ""}</span>
                     )}

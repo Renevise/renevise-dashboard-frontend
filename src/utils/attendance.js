@@ -1,5 +1,3 @@
-
-
 import {
     currentMonthPrefix,
     getCurrentWeekDates,
@@ -32,9 +30,9 @@ export function computeStats(records, employeeId) {
 
     return {
         presentDays     : month.filter(r => r.status === "Present" || r.status === "Late").length,
-        lateDays        : month.filter(r => r.status === "Late").length,
-        halfDays        : month.filter(r => r.status === "Half Day").length,
-        earlyLeaveDays  : month.filter(r => r.status === "Early Leave").length,
+        lateDays        : month.filter(r => r.isLate).length,
+        halfDays        : month.filter(r => r.status === "Half Day"    && !r.isLate).length,
+        earlyLeaveDays  : month.filter(r => r.status === "Early Leave" && !r.isLate).length,
         totalWorkingDays: countWorkingDays(prefix),
     };
 }
@@ -46,9 +44,12 @@ export function computeWeeklyHours(records, employeeId) {
             r.date === date &&
             (employeeId == null || r.employeeId === employeeId)
         );
+        const totalHours = rec
+            ? parseFloat((rec.workedHours + (rec.breakMinutes ?? 0) / 60).toFixed(1))
+            : 0;
         return {
             day  : dayLabel(date),
-            hours: rec ? parseFloat(rec.workedHours.toFixed(1)) : 0,
+            hours: totalHours,
             date,
         };
     });

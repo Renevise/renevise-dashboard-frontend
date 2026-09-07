@@ -25,6 +25,7 @@ function StatusBadge({ status }) {
         Approved: "mr-badge--approved",
         Rejected: "mr-badge--rejected",
         Pending:  "mr-badge--pending",
+        Expired:  "mr-badge--expired",
     };
     return <span className={`mr-badge ${cls[status] || "mr-badge--pending"}`}>{status}</span>;
 }

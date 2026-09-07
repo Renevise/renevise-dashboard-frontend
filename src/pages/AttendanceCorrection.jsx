@@ -79,7 +79,7 @@ function AttendanceCorrection() {
         if (!form.date)    errs.date    = "Date is required";
         if (!form.clockIn) errs.clockIn = "Clock in time is required";
         if (!form.clockOut) errs.clockOut = "Clock out time is required";
-        else if (form.clockIn && form.clockOut <= form.clockIn) errs.clockOut = "Clock out must be after clock in";
+        else if (form.clockIn && form.clockOut === form.clockIn) errs.clockOut = "Clock out time cannot be the same as clock in time";
         if (!form.reason.trim()) errs.reason = "Please describe why the clock in/out was missed";
         return errs;
     }
@@ -180,6 +180,11 @@ function AttendanceCorrection() {
                                     <input type="time" name="clockOut" value={form.clockOut} onChange={handleChange}
                                         className={`ac-input${errors.clockOut ? " ac-input--err" : ""}`} />
                                     {errors.clockOut && <span className="ac-field-error">{errors.clockOut}</span>}
+                                    {form.clockIn && form.clockOut && form.clockOut < form.clockIn && !errors.clockOut && (
+                                        <span style={{ fontSize: 12, color: "#8B5CF6", display: "block", marginTop: 4 }}>
+                                            ⏱ Overnight shift — clock-out is on the following day
+                                        </span>
+                                    )}
                                 </div>
                             </div>
 
