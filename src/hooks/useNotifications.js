@@ -21,16 +21,10 @@ export function useNotifications() {
     const [notifications, setNotifications] = useState([]);
     const [unreadCount,   setUnreadCount]   = useState(0);
 
-    const user    = getStoredUser();
-    const userId  = (user?.id ?? user?._id ?? "").toString();
-    const isAdmin = user?.role === "admin";
+    const user   = getStoredUser();
+    const userId = (user?.id ?? user?._id ?? "").toString();
 
     const fetchNotifications = useCallback(async () => {
-        if (isAdmin) {
-            setNotifications([]);
-            setUnreadCount(0);
-            return;
-        }
         try {
             const res = await fetch(`${API_BASE}/api/notifications`, { headers: getAuthHeaders() });
             if (res.ok) {
@@ -41,7 +35,7 @@ export function useNotifications() {
         } catch (err) {
             console.error("Failed to fetch notifications:", err);
         }
-    }, [isAdmin]);
+    }, []);
 
     useEffect(() => {
         setNotifications([]);

@@ -204,35 +204,6 @@ function ApplyLeave() {
                                 {errors.reason && <span className="al-field-error">{errors.reason}</span>}
                             </div>
 
-                            <div className="al-field">
-                                <label className="al-label">Attachments</label>
-                                <div
-                                    className={`al-dropzone${dragOver ? " al-dropzone--over" : ""}`}
-                                    onClick={() => document.getElementById("al-file-input").click()}
-                                    onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-                                    onDragLeave={() => setDragOver(false)}
-                                    onDrop={e => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files); }}
-                                >
-                                    <FaCloudUploadAlt size={28} className="al-dropzone-icon" />
-                                    <p className="al-dropzone-text">Choose a file<span className="al-dropzone-or"> or drag it here.</span></p>
-                                    <p className="al-dropzone-hint">PDF, JPG, JPEG, PNG</p>
-                                    <input id="al-file-input" type="file" multiple accept=".pdf,.jpg,.jpeg,.png"
-                                        style={{ display: "none" }} onChange={e => addFiles(e.target.files)} />
-                                </div>
-                                {files.length > 0 && (
-                                    <ul className="al-file-list">
-                                        {files.map((f, i) => (
-                                            <li key={i} className="al-file-item">
-                                                <FaPaperclip size={11} />
-                                                <span className="al-file-name">{f.name}</span>
-                                                <button type="button" className="al-file-remove" onClick={() => removeFile(i)}>
-                                                    <FaTimes size={10} />
-                                                </button>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </div>
                         </div>
 
                         <div className="al-form-footer">

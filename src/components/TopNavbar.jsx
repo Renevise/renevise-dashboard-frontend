@@ -49,9 +49,12 @@ function NotificationPanel({ notifications, unreadCount, markAsRead, markAllAsRe
     function handleNotifClick(notif) {
         if (!notif.read) markAsRead(notif._id);
         onClose();
-        if (notif.type === "company_off") navigate("/attendance");
-        else if (notif.type?.startsWith("correction")) navigate("/attendance-correction");
-        else if (notif.type?.startsWith("overtime")) navigate("/report-overtime");
+        if (notif.type === "company_off")              navigate("/attendance");
+        else if (notif.type === "correction_submitted") navigate("/correction-management");
+        else if (notif.type === "overtime_submitted")   navigate("/overtime-management");
+        else if (notif.type === "leave_submitted")      navigate("/leave-management");
+        else if (notif.type?.startsWith("correction"))  navigate("/attendance-correction");
+        else if (notif.type?.startsWith("overtime"))    navigate("/report-overtime");
         else navigate("/leave");
     }
 
@@ -150,30 +153,28 @@ function TopNavbar() {
                 </div>
                 <div className="nav-date">{today}</div>
 
-                {!isAdmin && (
-                    <div className="notif-bell-wrap" ref={bellRef}>
-                        <button
-                            className="notif-bell-btn"
-                            onClick={() => setOpen(prev => !prev)}
-                            aria-label="Notifications"
-                        >
-                            <BellIcon />
-                            {unreadCount > 0 && (
-                                <span className="notif-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>
-                            )}
-                        </button>
-
-                        {open && (
-                            <NotificationPanel
-                                notifications={notifications}
-                                unreadCount={unreadCount}
-                                markAsRead={markAsRead}
-                                markAllAsRead={markAllAsRead}
-                                onClose={() => setOpen(false)}
-                            />
+                <div className="notif-bell-wrap" ref={bellRef}>
+                    <button
+                        className="notif-bell-btn"
+                        onClick={() => setOpen(prev => !prev)}
+                        aria-label="Notifications"
+                    >
+                        <BellIcon />
+                        {unreadCount > 0 && (
+                            <span className="notif-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>
                         )}
-                    </div>
-                )}
+                    </button>
+
+                    {open && (
+                        <NotificationPanel
+                            notifications={notifications}
+                            unreadCount={unreadCount}
+                            markAsRead={markAsRead}
+                            markAllAsRead={markAllAsRead}
+                            onClose={() => setOpen(false)}
+                        />
+                    )}
+                </div>
             </div>
         </header>
     );

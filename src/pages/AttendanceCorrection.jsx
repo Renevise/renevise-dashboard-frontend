@@ -196,33 +196,6 @@ function AttendanceCorrection() {
                                 {errors.reason && <span className="ac-field-error">{errors.reason}</span>}
                             </div>
 
-                            <div className="ac-field">
-                                <label className="ac-label">Attachments</label>
-                                <div className={`ac-dropzone${dragOver ? " ac-dropzone--over" : ""}`}
-                                    onClick={() => document.getElementById("ac-file-input").click()}
-                                    onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-                                    onDragLeave={() => setDragOver(false)}
-                                    onDrop={e => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files); }}>
-                                    <FaCloudUploadAlt size={28} className="ac-dropzone-icon" />
-                                    <p className="ac-dropzone-text">Choose a file<span className="ac-dropzone-or"> or drag it here.</span></p>
-                                    <p className="ac-dropzone-hint">PDF, JPG, JPEG, PNG</p>
-                                    <input id="ac-file-input" type="file" multiple accept=".pdf,.jpg,.jpeg,.png"
-                                        style={{ display: "none" }} onChange={e => addFiles(e.target.files)} />
-                                </div>
-                                {files.length > 0 && (
-                                    <ul className="ac-file-list">
-                                        {files.map((f, i) => (
-                                            <li key={i} className="ac-file-item">
-                                                <FaPaperclip size={11} />
-                                                <span className="ac-file-name">{f.name}</span>
-                                                <button type="button" className="ac-file-remove" onClick={() => removeFile(i)}>
-                                                    <FaTimes size={10} />
-                                                </button>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </div>
                         </div>
 
                         <div className="ac-form-footer">

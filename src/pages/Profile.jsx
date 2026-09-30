@@ -80,9 +80,13 @@ function Profile() {
             return;
         }
 
-        const pwFilled = pwForm.oldPassword || pwForm.newPassword || pwForm.confirmNewPassword;
+        const pwFilled = !!(pwForm.newPassword || pwForm.confirmNewPassword);
         if (pwFilled) {
-            if (!pwForm.oldPassword || !pwForm.newPassword || !pwForm.confirmNewPassword) {
+            if (!pwForm.oldPassword) {
+                setPwErr("Old password is required to change password");
+                return;
+            }
+            if (!pwForm.newPassword || !pwForm.confirmNewPassword) {
                 setPwErr("All password fields are required");
                 return;
             }

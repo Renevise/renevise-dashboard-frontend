@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import "./AttendanceRemarks.css";
-import { FaSearch, FaUsers, FaUser } from "react-icons/fa";
+import { FaUsers, FaUser } from "react-icons/fa";
 import { FaChevronLeft, FaChevronRight, FaClockRotateLeft } from "react-icons/fa6";
 import { useApp } from "../context/AppContext";
 import { formatHours } from "../utils/time";
@@ -180,7 +180,6 @@ function AttendanceRemarks() {
 
     const [activeTab,     setActiveTab]     = useState("all");
     const [selectedEmpId, setSelectedEmpId] = useState("");
-    const [search,        setSearch]        = useState("");
     const [page,          setPage]          = useState(1);
     const [openRow,       setOpenRow]       = useState(null);
 
@@ -189,17 +188,13 @@ function AttendanceRemarks() {
         if (isAdmin && activeTab === "emp" && selectedEmpId) {
             result = result.filter(r => r.employeeId === selectedEmpId);
         }
-        if (search.trim()) {
-            const q = search.trim().toLowerCase();
-            result = result.filter(r => r.employee.toLowerCase().includes(q));
-        }
         return result;
-    }, [records, isAdmin, activeTab, selectedEmpId, search]);
+    }, [records, isAdmin, activeTab, selectedEmpId]);
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
     const pageData   = filtered.slice((page - 1) * ROWS_PER_PAGE, page * ROWS_PER_PAGE);
 
-    useEffect(() => { setPage(1); }, [activeTab, selectedEmpId, search]);
+    useEffect(() => { setPage(1); }, [activeTab, selectedEmpId]);
 
     const handleTabChange = tab => { setActiveTab(tab); setSelectedEmpId(""); };
 
@@ -216,63 +211,6 @@ function AttendanceRemarks() {
 
     return (
         <div className="rmkpage">
-            <div className="rmkpage-toolbar">
-                {isAdmin && (
-                    <div className="rmkpage-left">
-                        <div className="rmkpage-tabs">
-                            <button
-                                className={`rmkpage-tab${activeTab === "all" ? " active" : ""}`}
-                                onClick={() => handleTabChange("all")}
-                            >
-                                <FaUsers size={12} /> All Employees
-                            </button>
-                            <button
-                                className={`rmkpage-tab${activeTab === "emp" ? " active" : ""}`}
-                                onClick={() => handleTabChange("emp")}
-                            >
-                                <FaUser size={12} /> Employee Data
-                            </button>
-                        </div>
-
-                        {activeTab === "emp" && (
-                            <select
-                                className="rmkpage-select"
-                                value={selectedEmpId}
-                                onChange={e => { setSelectedEmpId(e.target.value); setPage(1); }}
-                            >
-                                <option value="">Select employee…</option>
-                                <option value={currentEmployee.id}>
-                                    {currentEmployee.name} (admin)
-                                </option>
-                                {employees
-                                    .filter(e => e._id !== currentEmployee.id && e._id !== currentEmployee._id)
-                                    .map(e => (
-                                        <option key={e._id} value={e._id}>
-                                            {e.userName}{e.role === "admin" ? " (admin)" : ""}
-                                            {e.department ? ` — ${e.department}` : ""}
-                                        </option>
-                                    ))}
-                            </select>
-                        )}
-                    </div>
-                )}
-
-                <div className="rmkpage-right">
-                    <div className="rmkpage-search">
-                        <FaSearch className="rmkpage-search-icon" />
-                        <input
-                            type="text"
-                            className="rmkpage-search-input"
-                            placeholder={isAdmin ? "Search by name…" : "Search records…"}
-                            value={search}
-                            onChange={e => { setSearch(e.target.value); setPage(1); }}
-                        />
-                        {search && (
-                            <button className="rmkpage-search-clear" onClick={() => { setSearch(""); setPage(1); }}>✕</button>
-                        )}
-                    </div>
-                </div>
-            </div>
 
             <div className="rmkpage-card">
                 <div className="rmkpage-card-header">
