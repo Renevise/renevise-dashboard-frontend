@@ -321,6 +321,113 @@
   margin-top: 2px;
 }
 
+/* ── User Menu ─────────────────────────────────────── */
+.user-menu-wrap {
+  position: relative;
+}
+
+.user-menu-btn {
+  background: rgba(62, 107, 255, 0.1);
+  border: 1px solid rgba(62, 107, 255, 0.2);
+  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: rgba(94, 168, 255, 0.8);
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.user-menu-btn:hover {
+  background: rgba(62, 107, 255, 0.2);
+  color: #ffffff;
+  border-color: rgba(62, 107, 255, 0.4);
+}
+
+.user-menu-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 210px;
+  background: #0E1A34;
+  border: 1px solid rgba(62, 107, 255, 0.2);
+  border-radius: 14px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  z-index: 9999;
+  animation: notifFadeIn 0.15s ease;
+}
+
+.user-menu-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px 12px;
+}
+
+.user-menu-avatar {
+  color: rgba(94, 168, 255, 0.7);
+  flex-shrink: 0;
+  display: flex;
+}
+
+.user-menu-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+
+.user-menu-role {
+  font-size: 10.5px;
+  color: rgba(94, 168, 255, 0.55);
+  font-family: 'Inter', sans-serif;
+  text-transform: capitalize;
+  margin-top: 2px;
+}
+
+.user-menu-divider {
+  height: 1px;
+  background: rgba(62, 107, 255, 0.12);
+  margin: 0 14px;
+}
+
+.user-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 11px 14px;
+  font-size: 12.5px;
+  font-family: 'Inter', sans-serif;
+  color: rgba(255, 255, 255, 0.75);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.user-menu-item:hover {
+  background: rgba(62, 107, 255, 0.1);
+  color: #ffffff;
+}
+
+.user-menu-item--logout {
+  color: rgba(239, 68, 68, 0.8);
+}
+
+.user-menu-item--logout:hover {
+  background: rgba(239, 68, 68, 0.08);
+  color: #EF4444;
+}
+
 @media (max-width: 1024px) {
   .topnav {
     padding: 0 22px 12px;

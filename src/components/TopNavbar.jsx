@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, NavLink } from "react-router-dom";
 import "./TopNavbar.css";
 import { useApp } from "../context/AppContext";
+import { FaUserCircle, FaIdCard, FaSignOutAlt, FaPowerOff } from "react-icons/fa";
 
 const PAGE_TITLES = {
     "/dashboard"             : "Dashboard",
@@ -95,10 +96,14 @@ function NotificationPanel({ notifications, unreadCount, markAsRead, markAllAsRe
 
 function TopNavbar() {
     const { pathname }        = useLocation();
+    const navigate            = useNavigate();
     const { currentEmployee, notifications: notifCtx, setSidebarOpen } = useApp();
     const [now, setNow]       = useState(new Date());
     const [open, setOpen]     = useState(false);
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const bellRef             = useRef(null);
+    const userMenuRef         = useRef(null);
 
     const { notifications = [], unreadCount = 0, markAsRead, markAllAsRead } = notifCtx ?? {};
 
@@ -109,13 +114,18 @@ function TopNavbar() {
 
     useEffect(() => {
         function handleOutsideClick(e) {
-            if (bellRef.current && !bellRef.current.contains(e.target)) {
-                setOpen(false);
-            }
+            if (bellRef.current && !bellRef.current.contains(e.target)) setOpen(false);
+            if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setUserMenuOpen(false);
         }
-        if (open) document.addEventListener("mousedown", handleOutsideClick);
+        if (open || userMenuOpen) document.addEventListener("mousedown", handleOutsideClick);
         return () => document.removeEventListener("mousedown", handleOutsideClick);
-    }, [open]);
+    }, [open, userMenuOpen]);
+
+    function confirmLogout() {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/login", { replace: true });
+    }
 
     const title = PAGE_TITLES[pathname] || "Dashboard";
 
@@ -123,11 +133,10 @@ function TopNavbar() {
         weekday: "long", year: "numeric", month: "long", day: "numeric",
     });
 
-    const isAdmin = currentEmployee?.role === "admin";
-
     return (
-        <header className="topnav">
+        <>
 
+        <header className="topnav">
             <button className="topnav-menu-btn" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
                 <span /><span /><span />
             </button>
@@ -175,8 +184,72 @@ function TopNavbar() {
                         />
                     )}
                 </div>
+
+                <div className="user-menu-wrap" ref={userMenuRef}>
+                    <button
+                        className="user-menu-btn"
+                        onClick={() => setUserMenuOpen(prev => !prev)}
+                        aria-label="User menu"
+                    >
+                        <FaUserCircle size={20} />
+                    </button>
+
+                    {userMenuOpen && (
+                        <div className="user-menu-panel">
+                            <div className="user-menu-info">
+                                <div className="user-menu-avatar">
+                                    <FaUserCircle size={28} />
+                                </div>
+                                <div>
+                                    <div className="user-menu-name">{currentEmployee.name}</div>
+                                    <div className="user-menu-role">{currentEmployee.role}</div>
+                                </div>
+                            </div>
+                            <div className="user-menu-divider" />
+                            <NavLink
+                                to="/profile"
+                                className="user-menu-item"
+                                onClick={() => setUserMenuOpen(false)}
+                            >
+                                <FaIdCard size={13} />
+                                My Profile
+                            </NavLink>
+                            <button
+                                className="user-menu-item user-menu-item--logout"
+                                onClick={() => { setUserMenuOpen(false); setShowLogoutConfirm(true); }}
+                            >
+                                <FaPowerOff size={13} />
+                                Sign Out
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
+
         </header>
+
+        {showLogoutConfirm && (
+            <div className="logout-overlay" onClick={() => setShowLogoutConfirm(false)}>
+                <div className="logout-modal" onClick={e => e.stopPropagation()}>
+                    <div className="logout-modal-icon">
+                        <FaSignOutAlt size={22} style={{ color: "#5EA8FF" }} />
+                    </div>
+                    <h3 className="logout-modal-title">Sign Out</h3>
+                    <p className="logout-modal-msg">
+                        Are you sure you want to sign out of your account?
+                    </p>
+                    <div className="logout-modal-actions">
+                        <button className="logout-cancel-btn" onClick={() => setShowLogoutConfirm(false)}>
+                            Cancel
+                        </button>
+                        <button className="logout-confirm-btn" onClick={confirmLogout}>
+                            Yes, Sign Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+        </>
     );
 }
 
