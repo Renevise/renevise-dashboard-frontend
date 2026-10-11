@@ -26,6 +26,13 @@ function StatusBadge({ status }) {
     );
 }
 
+function getAutoRemarks(record) {
+    if (record.isCompanyOff)                                return "";
+    if (record.status === "Early Leave" && record.isLate)   return "Late, Early Leave";
+    if (record.status === "Half Day"    && record.isLate)   return "Late, Half Day";
+    return "";
+}
+
 function RemarksPanel({ row, allRecords, isAdmin, onClose, onSave }) {
     const [text,   setText]   = useState(row.adminRemarks ?? "");
     const [saving, setSaving] = useState(false);
@@ -273,8 +280,8 @@ function AttendanceRemarks() {
                                             </div>
                                         </td>
                                         <td className="rmkpage-remarks-preview">
-                                            {row.adminRemarks
-                                                ? <span className="rmkpage-has-remarks">{row.adminRemarks}</span>
+                                            {getAutoRemarks(row)
+                                                ? <span className="rmkpage-has-remarks">{getAutoRemarks(row)}</span>
                                                 : <span className="rmkpage-no-remarks">—</span>
                                             }
                                         </td>

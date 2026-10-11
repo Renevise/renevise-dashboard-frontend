@@ -26,6 +26,13 @@ function StatusBadge({ status }) {
     );
 }
 
+function getAutoRemarks(record) {
+    if (record.isCompanyOff)                                return "";
+    if (record.status === "Early Leave" && record.isLate)   return "Late, Early Leave";
+    if (record.status === "Half Day"    && record.isLate)   return "Late, Half Day";
+    return "";
+}
+
 function buildCompanyOffRows(companyOffs, employeeName, employeeId) {
     const pad = n => String(n).padStart(2, "0");
     const rows = [];
@@ -168,7 +175,7 @@ function Attendance() {
         const attFiltered = filtered.filter(r =>
             r.date.startsWith(exportMonth) && !adminIds.has(r.employeeId)
         );
-        const header = ["Employee", "Department", "Date", "Clock In", "Clock Out", "Break", "Hours", "Status"];
+        const header = ["Employee", "Department", "Date", "Clock In", "Clock Out", "Break", "Hours", "Status", "Remarks"];
         const rows   = attFiltered.map(r => [
             r.employee,
             getRowDept(r),
@@ -178,6 +185,7 @@ function Attendance() {
             formatBreak(r.breakMinutes),
             formatHours(r.workedHours),
             r.status,
+            getAutoRemarks(r),
         ]);
 
         const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
@@ -426,12 +434,13 @@ function Attendance() {
                                 <th>Break</th>
                                 <th>Hours</th>
                                 <th>Status</th>
+                                <th>Remarks</th>
                             </tr>
                         </thead>
                         <tbody>
                             {pageData.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8}>
+                                    <td colSpan={9}>
                                         <div className="att-empty">
                                             <FaClockRotateLeft size={28} style={{ opacity: 0.25, marginBottom: 10 }} />
                                             <div>
@@ -465,6 +474,9 @@ function Attendance() {
                                                     <span className="att-late-dot" title="Late arrival">L</span>
                                                 )}
                                             </div>
+                                        </td>
+                                        <td className="att-remarks-cell">
+                                            {getAutoRemarks(row) || "—"}
                                         </td>
                                     </tr>
                                 ))

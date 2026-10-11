@@ -492,6 +492,7 @@ function Dashboard() {
     const [successMsg,      setSuccessMsg]      = useState("");
     const [clockInLoading,  setClockInLoading]  = useState(false);
     const [clockOutLoading, setClockOutLoading] = useState(false);
+    const [pendingAction,   setPendingAction]   = useState(null);
 
     useEffect(() => {
         const t = setInterval(() => setNow(new Date()), 1000);
@@ -593,7 +594,7 @@ function Dashboard() {
     const today          = todayISO();
     const empTodayRecord = attendance.records.find(r => r.date === today && r.employeeId === viewEmpId) ?? null;
 
-    async function handleClockIn() {
+    async function doClockIn() {
         if (clockInLoading) return;
         setClockInLoading(true);
         const ok = await clockIn(locType);
@@ -601,7 +602,7 @@ function Dashboard() {
         if (ok) setSuccessMsg("in");
     }
 
-    async function handleClockOut() {
+    async function doClockOut() {
         if (clockOutLoading) return;
         setClockOutLoading(true);
         const result = await clockOut();
@@ -609,13 +610,10 @@ function Dashboard() {
         if (result) setSuccessMsg("out");
     }
 
-    async function handleStartBreak() {
-        await startBreak();
-    }
-
-    async function handleEndBreak() {
-        await endBreak();
-    }
+    function handleClockIn()    { setPendingAction({ label: "Clock In",    fn: doClockIn   }); }
+    function handleClockOut()   { setPendingAction({ label: "Clock Out",   fn: doClockOut  }); }
+    function handleStartBreak() { setPendingAction({ label: "Start Break", fn: startBreak  }); }
+    function handleEndBreak()   { setPendingAction({ label: "End Break",   fn: endBreak    }); }
 
     function getBadgeInfo() {
         if (onBreak)     return { text: "On Break",       cls: "badge-break"   };
@@ -885,6 +883,31 @@ function Dashboard() {
                     myClientOffs={clientOffs?.myClientOffs ?? []}
                     submitClientOff={clientOffs?.submitClientOff ?? (() => {})}
                 />
+            )}
+
+            {pendingAction && (
+                <>
+                    <div className="confirm-backdrop" onClick={() => setPendingAction(null)} />
+                    <div className="confirm-dialog">
+                        <p className="confirm-msg">
+                            Are you sure you want to <strong>{pendingAction.label}</strong>?
+                        </p>
+                        <div className="confirm-btns">
+                            <button
+                                className="confirm-yes"
+                                onClick={async () => { setPendingAction(null); await pendingAction.fn(); }}
+                            >
+                                Confirm
+                            </button>
+                            <button
+                                className="confirm-no"
+                                onClick={() => setPendingAction(null)}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </>
             )}
 
         </div>

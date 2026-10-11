@@ -29,7 +29,7 @@ export function computeStats(records, employeeId) {
     );
 
     return {
-        presentDays     : month.filter(r => r.status === "Present" || r.status === "Late").length,
+        presentDays     : month.filter(r => r.status === "Present").length,
         lateDays        : month.filter(r => r.isLate).length,
         halfDays        : month.filter(r => r.status === "Half Day"    && !r.isLate).length,
         earlyLeaveDays  : month.filter(r => r.status === "Early Leave" && !r.isLate).length,
