@@ -144,6 +144,34 @@
 .al-field-error { display: block; font-size: 12px; color: #F87171; margin-top: 5px; }
 .al-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
+.al-working-days-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+.al-working-days-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 13px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(62,107,255,0.12);
+  border: 1px solid rgba(62,107,255,0.28);
+  color: #7da7ff;
+  white-space: nowrap;
+}
+.al-working-days-pill--warn {
+  background: rgba(239,68,68,0.1);
+  border-color: rgba(239,68,68,0.3);
+  color: #f87171;
+}
+.al-working-days-note {
+  font-size: 11.5px;
+  color: rgba(255,255,255,0.28);
+}
+
 .al-requester-row {
   display: flex; align-items: center; gap: 14px;
   background: rgba(255,255,255,0.03); border: 1px solid rgba(62,107,255,0.1);

@@ -140,7 +140,7 @@ function Attendance() {
     const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
     const pageData   = filtered.slice((page - 1) * ROWS_PER_PAGE, page * ROWS_PER_PAGE);
 
-    useEffect(() => { setPage(1); }, [records.length]);
+    useEffect(() => { setPage(1); }, [filtered.length]);
 
 
     const handleTabChange = tab => {
@@ -175,18 +175,56 @@ function Attendance() {
         const attFiltered = filtered.filter(r =>
             r.date.startsWith(exportMonth) && !adminIds.has(r.employeeId)
         );
-        const header = ["Employee", "Department", "Date", "Clock In", "Clock Out", "Break", "Hours", "Status", "Remarks"];
-        const rows   = attFiltered.map(r => [
-            r.employee,
-            getRowDept(r),
-            r.date,
-            r.clockIn,
-            r.clockOut,
-            formatBreak(r.breakMinutes),
-            formatHours(r.workedHours),
-            r.status,
-            getAutoRemarks(r),
-        ]);
+        // Per-employee monthly stats for right-side summary columns
+        const empStatsMap = {};
+        for (const r of attFiltered) {
+            if (r.isCompanyOff) continue;
+            const eid = r.employeeId ?? "";
+            if (!eid) continue;
+            if (!empStatsMap[eid]) empStatsMap[eid] = { present: 0, late: 0, half: 0, early: 0 };
+            if (r.status === "Present")                  empStatsMap[eid].present++;
+            if (r.isLate)                                empStatsMap[eid].late++;
+            if (r.status === "Half Day"    && !r.isLate) empStatsMap[eid].half++;
+            if (r.status === "Early Leave" && !r.isLate) empStatsMap[eid].early++;
+        }
+
+        const empLeavesMap = {};
+        for (const lv of (leave?.allLeaves ?? [])) {
+            if (lv.status !== "Approved") continue;
+            const eid = lv.userId?.toString() ?? "";
+            if (!eid) continue;
+            const from  = new Date((lv.fromDate  || lv.startDate) + "T00:00:00");
+            const until = new Date((lv.untilDate || lv.endDate)   + "T00:00:00");
+            const cur   = new Date(from);
+            while (cur <= until) {
+                const ds = `${cur.getFullYear()}-${pad(cur.getMonth() + 1)}-${pad(cur.getDate())}`;
+                if (ds.startsWith(exportMonth)) empLeavesMap[eid] = (empLeavesMap[eid] ?? 0) + 1;
+                cur.setDate(cur.getDate() + 1);
+            }
+        }
+
+        const header = ["Employee", "Department", "Date", "Clock In", "Clock Out", "Break", "Hours", "Status", "Remarks", "Total On Time", "Total Late", "Total Half Day", "Total Early Leave", "Total Leaves"];
+        const rows   = attFiltered.map(r => {
+            const eid    = r.employeeId ?? "";
+            const st     = empStatsMap[eid] ?? { present: 0, late: 0, half: 0, early: 0 };
+            const leaves = empLeavesMap[eid] ?? 0;
+            return [
+                r.employee,
+                getRowDept(r),
+                r.date,
+                r.clockIn,
+                r.clockOut,
+                formatBreak(r.breakMinutes),
+                formatHours(r.workedHours),
+                r.status,
+                getAutoRemarks(r),
+                r.isCompanyOff ? "—" : st.present,
+                r.isCompanyOff ? "—" : st.late,
+                r.isCompanyOff ? "—" : st.half,
+                r.isCompanyOff ? "—" : st.early,
+                r.isCompanyOff ? "—" : leaves,
+            ];
+        });
 
         const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
 
@@ -209,34 +247,10 @@ function Attendance() {
             // Restrict to current month (same as dashboard)
             const monthRecords = records.filter(r => r.date.startsWith(monthPrefix) && !r.isCompanyOff);
 
-            // Build set of company off dates for the selected month
-            const companyOffDates = new Set();
-            for (const co of coList) {
-                const from  = new Date(co.fromDate  + "T00:00:00");
-                const until = new Date(co.untilDate + "T00:00:00");
-                const cur   = new Date(from);
-                while (cur <= until) {
-                    const ds = `${cur.getFullYear()}-${pad(cur.getMonth()+1)}-${pad(cur.getDate())}`;
-                    companyOffDates.add(ds);
-                    cur.setDate(cur.getDate() + 1);
-                }
-            }
-
-            // Working days = all days in month - Saturday - Sunday - Company Off
-            const daysInMonth = new Date(expYear, expMonth, 0).getDate();
-            const workingDates = [];
-            for (let d = 1; d <= daysInMonth; d++) {
-                const ds  = `${expYear}-${pad(expMonth)}-${pad(d)}`;
-                const day = new Date(ds + "T00:00:00").getDay(); // 0=Sun, 6=Sat
-                if (day !== 0 && day !== 6 && !companyOffDates.has(ds)) {
-                    workingDates.push(ds);
-                }
-            }
-
             const summaryHeader = [
                 "Employee", "Department",
                 "Present Days", "Late Days", "Half Days", "Early Leave",
-                "Total Absent", "Leaves Used (Year)", "Remaining Leaves", "Salary Deducted",
+                "Leaves Used (Year)", "Remaining Leaves",
             ];
 
             const summaryRows = [...employees]
@@ -247,29 +261,10 @@ function Attendance() {
                     const empRecs = monthRecords.filter(r => r.employeeId === empId);
 
                     // Exact same logic as computeStats in attendance.js
-                    const present    = empRecs.filter(r => r.status === "Present" || r.status === "Late").length;
+                    const present    = empRecs.filter(r => r.status === "Present").length;
                     const late       = empRecs.filter(r => r.isLate).length;
                     const halfDay    = empRecs.filter(r => r.status === "Half Day"    && !r.isLate).length;
                     const earlyLeave = empRecs.filter(r => r.status === "Early Leave" && !r.isLate).length;
-
-                    // Expand this employee's approved leaves into individual dates
-                    const empApprovedLeaves = allLeaves.filter(
-                        l => l.userId?.toString() === empId && l.status === "Approved"
-                    );
-                    const empLeaveDates = new Set();
-                    for (const lv of empApprovedLeaves) {
-                        const lvFrom  = new Date((lv.fromDate  || lv.startDate) + "T00:00:00");
-                        const lvUntil = new Date((lv.untilDate || lv.endDate)   + "T00:00:00");
-                        const cur     = new Date(lvFrom);
-                        while (cur <= lvUntil) {
-                            empLeaveDates.add(`${cur.getFullYear()}-${pad(cur.getMonth()+1)}-${pad(cur.getDate())}`);
-                            cur.setDate(cur.getDate() + 1);
-                        }
-                    }
-
-                    // Absent = working day with no attendance record AND no approved leave
-                    const empAttDates = new Set(empRecs.map(r => r.date));
-                    const absent = workingDates.filter(d => !empAttDates.has(d) && !empLeaveDates.has(d)).length;
 
                     const allEmpLeaves = allLeaves.filter(l => l.userId?.toString() === empId);
                     const leaveStats   = calcLeaveStats(allEmpLeaves, currentYear, currentMonth);
@@ -281,10 +276,8 @@ function Attendance() {
                         late,
                         halfDay,
                         earlyLeave,
-                        absent,
                         leaveStats.yearlyUsed,
                         leaveStats.balance,
-                        (() => { const d = Math.max(0, leaveStats.yearlyUsed - leaveStats.yearlyTotal); return d === 0 ? "0" : `${d} day${d !== 1 ? "s" : ""}`; })(),
                     ];
                 });
 
@@ -292,7 +285,7 @@ function Attendance() {
             ws2["!cols"] = [
                 { wch: 22 }, { wch: 14 },
                 { wch: 13 }, { wch: 10 }, { wch: 10 }, { wch: 12 },
-                { wch: 13 }, { wch: 18 }, { wch: 16 }, { wch: 16 },
+                { wch: 18 }, { wch: 16 },
             ];
             XLSX.utils.book_append_sheet(wb, ws2, "Employee Summary");
         }
@@ -497,7 +490,7 @@ function Attendance() {
                         <span className="att-page-label">Page {page} of {totalPages}</span>
                         <button
                             className="att-page-arrow"
-                            disabled={page === totalPages}
+                            disabled={page >= totalPages}
                             onClick={() => setPage(p => p + 1)}
                         >
                             <FaChevronRight size={11} />

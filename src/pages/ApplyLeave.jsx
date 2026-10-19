@@ -5,6 +5,7 @@ import {
 } from "react-icons/fa";
 import leaveJson from "../data/leave.json";
 import { useApp } from "../context/AppContext";
+import { countWorkingDays } from "../utils/leave";
 import "./ApplyLeave.css";
 
 const LEAVE_TYPES = leaveJson.types;
@@ -55,6 +56,9 @@ function ApplyLeave() {
         if (!form.untilDate) errs.untilDate = "Until date is required";
         else if (form.fromDate && form.untilDate && form.untilDate < form.fromDate)
             errs.untilDate = "Until date must be on or after from date";
+        else if (form.fromDate && form.untilDate && form.untilDate >= form.fromDate
+                 && countWorkingDays(form.fromDate, form.untilDate) === 0)
+            errs.untilDate = "The selected dates contain no working days. Saturday and Sunday are not chargeable leave days.";
         if (!form.reason.trim()) errs.reason = "Please provide a reason for your leave";
         return errs;
     }
@@ -188,6 +192,27 @@ function ApplyLeave() {
                                     {errors.untilDate && <span className="al-field-error">{errors.untilDate}</span>}
                                 </div>
                             </div>
+
+                            {(() => {
+                                if (!form.fromDate || !form.untilDate || form.untilDate < form.fromDate) return null;
+                                const wd = countWorkingDays(form.fromDate, form.untilDate);
+                                if (wd === 0) return (
+                                    <div className="al-working-days-row">
+                                        <span className="al-working-days-pill al-working-days-pill--warn">
+                                            0 working days
+                                        </span>
+                                        <span className="al-working-days-note">Saturday and Sunday are not counted</span>
+                                    </div>
+                                );
+                                return (
+                                    <div className="al-working-days-row">
+                                        <span className="al-working-days-pill">
+                                            {wd} working day{wd !== 1 ? "s" : ""}
+                                        </span>
+                                        <span className="al-working-days-note">Saturday and Sunday excluded</span>
+                                    </div>
+                                );
+                            })()}
 
                             <div className="al-field">
                                 <label className="al-label">
