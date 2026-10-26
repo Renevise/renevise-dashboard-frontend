@@ -7,7 +7,7 @@ import {
 import "./EmployeeManagement.css";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
-const DEPARTMENTS = ["ServiceNow", "Web Development", "App Development", "AI Content Creation"];
+const DEPARTMENTS = ["ServiceNow", "Web Development", "App Development", "AI Content Creation", "Digital Marketing"];
 const EMPTY_FORM = { firstName: "", lastName: "", email: "", password: "", role: "employee", department: "" };
 
 function normalizePart(str) {
