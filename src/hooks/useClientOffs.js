@@ -34,7 +34,6 @@ export function useClientOffs() {
                 setMyClientOffs(data.clientOffs ?? []);
             }
         } catch (err) {
-            console.error("[ClientOff] Failed to fetch own records:", err);
         }
     }, []);
 
@@ -46,7 +45,6 @@ export function useClientOffs() {
                 setAllClientOffs(data.clientOffs ?? []);
             }
         } catch (err) {
-            console.error("[ClientOff] Failed to fetch all records:", err);
         }
     }, []);
 

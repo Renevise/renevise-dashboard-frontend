@@ -32,7 +32,6 @@ export function useCompanyOffs() {
                 setCompanyOffs(data.companyOffs ?? []);
             }
         } catch (err) {
-            console.error("Failed to fetch company offs:", err);
         }
     }, []);
 

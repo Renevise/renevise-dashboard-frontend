@@ -5,6 +5,7 @@ import {
     FaTachometerAlt, FaClock, FaCalendarAlt,
     FaUsers, FaClipboardList, FaClipboardCheck,
     FaInbox, FaUserSlash, FaTimes, FaCommentAlt,
+    FaUserClock,
 } from "react-icons/fa";
 import { useApp } from "../context/AppContext";
 
@@ -20,6 +21,7 @@ const employeeNav = [
 ];
 
 const adminNav = [
+    { to: "/today-attendance",     icon: FaUserClock,     label: "Today's Attendance"      },
     { to: "/employees",            icon: FaUsers,         label: "Employee Management"     },
     { to: "/leave-management",     icon: FaClipboardList, label: "Leave Management"        },
     { to: "/correction-management",icon: FaClipboardCheck,label: "Correction Management"   },

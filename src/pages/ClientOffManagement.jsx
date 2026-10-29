@@ -224,7 +224,6 @@ function ClientOffManagement() {
                 setClientOffs(data ?? []);
             }
         } catch (err) {
-            console.error("Failed to fetch client offs:", err);
         } finally {
             setLoading(false);
         }

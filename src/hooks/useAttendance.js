@@ -92,7 +92,6 @@ export function useAttendance() {
                     if (!cancelled) setRecords(raw.map(normalizeRecord));
                 }
             } catch (err) {
-                if (!cancelled) console.error("Failed to load attendance data:", err);
             }
         }
         init();
@@ -133,21 +132,18 @@ export function useAttendance() {
 
             if (!res.ok) {
                 const { message } = await res.json().catch(() => ({ message: "Unknown error" }));
-                console.error("Clock in failed:", message);
                 return false;
             }
 
             const { record } = await res.json();
             const normalized = normalizeRecord(record);
             if (!normalized.clockInMs) {
-                console.error("Clock in response missing clockInMs");
                 return false;
             }
             setClockState({ clockInMs: normalized.clockInMs, locationType });
             setRecords(prev => [normalized, ...prev.filter(r => r.id !== normalized.id)]);
             return true;
         } catch (err) {
-            console.error("Clock in error:", err);
             return false;
         }
     }, []);
@@ -160,7 +156,6 @@ export function useAttendance() {
             });
             if (!res.ok) {
                 const { message } = await res.json().catch(() => ({ message: "Unknown error" }));
-                console.error("Start break failed:", message);
                 return false;
             }
             const { record } = await res.json();
@@ -171,7 +166,6 @@ export function useAttendance() {
             } : null);
             return true;
         } catch (err) {
-            console.error("Start break error:", err);
             return false;
         }
     }, []);
@@ -184,7 +178,6 @@ export function useAttendance() {
             });
             if (!res.ok) {
                 const { message } = await res.json().catch(() => ({ message: "Unknown error" }));
-                console.error("End break failed:", message);
                 return false;
             }
             const { record } = await res.json();
@@ -195,7 +188,6 @@ export function useAttendance() {
             } : null);
             return true;
         } catch (err) {
-            console.error("End break error:", err);
             return false;
         }
     }, []);
@@ -227,7 +219,6 @@ export function useAttendance() {
             });
             if (!res.ok) {
                 const { message } = await res.json().catch(() => ({ message: "Unknown error" }));
-                console.error("Clock out failed:", message);
                 return null;
             }
             const { record } = await res.json();
@@ -245,7 +236,6 @@ export function useAttendance() {
             setClockState(null);
             return normalized;
         } catch (err) {
-            console.error("Clock out error:", err);
             return null;
         }
     }, [clockState, isAdmin]);

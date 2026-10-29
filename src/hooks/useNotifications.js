@@ -33,7 +33,6 @@ export function useNotifications() {
                 setUnreadCount(data.unreadCount ?? 0);
             }
         } catch (err) {
-            console.error("Failed to fetch notifications:", err);
         }
     }, []);
 
@@ -57,7 +56,6 @@ export function useNotifications() {
                 setUnreadCount(prev => Math.max(0, prev - 1));
             }
         } catch (err) {
-            console.error("Failed to mark notification as read:", err);
         }
     }, []);
 
@@ -72,7 +70,6 @@ export function useNotifications() {
                 setUnreadCount(0);
             }
         } catch (err) {
-            console.error("Failed to mark all as read:", err);
         }
     }, []);
 

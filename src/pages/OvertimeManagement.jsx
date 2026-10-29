@@ -231,7 +231,6 @@ function OvertimeManagement() {
                 setOvertimes(data ?? []);
             }
         } catch (err) {
-            console.error("Failed to fetch overtimes:", err);
         } finally {
             setLoading(false);
         }

@@ -222,7 +222,6 @@ function CorrectionManagement() {
                 setCorrections(data ?? []);
             }
         } catch (err) {
-            console.error("Failed to fetch corrections:", err);
         } finally {
             setLoading(false);
         }

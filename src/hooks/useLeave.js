@@ -42,7 +42,6 @@ export function useLeave() {
                 setMonthlyUsed(data.monthlyUsed ?? 0);
             }
         } catch (err) {
-            console.error("Failed to fetch my leaves:", err);
         }
     }, []);
 
@@ -54,7 +53,6 @@ export function useLeave() {
                 setAllLeaves(data.leaves ?? []);
             }
         } catch (err) {
-            console.error("Failed to fetch all leaves:", err);
         }
     }, []);
 

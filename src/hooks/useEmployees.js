@@ -41,7 +41,6 @@ export function useEmployees() {
                     setEmployees(data.employees ?? []);
                 }
             } catch (err) {
-                console.error("Failed to fetch employees:", err);
             } finally {
                 setLoading(false);
             }

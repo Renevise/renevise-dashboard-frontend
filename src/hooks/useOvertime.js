@@ -33,7 +33,6 @@ export function useOvertime() {
                 setMyOvertimes(data.overtimes ?? []);
             }
         } catch (err) {
-            console.error("Failed to fetch my overtimes:", err);
         }
     }, []);
 
@@ -45,7 +44,6 @@ export function useOvertime() {
                 setAllOvertimes(data.overtimes ?? []);
             }
         } catch (err) {
-            console.error("Failed to fetch all overtimes:", err);
         }
     }, []);
 

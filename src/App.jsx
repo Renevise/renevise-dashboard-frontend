@@ -28,6 +28,7 @@ import TeamReport            from "./pages/TeamReport";
 import ClientOffManagement  from "./pages/ClientOffManagement";
 import Profile               from "./pages/Profile";
 import AttendanceRemarks     from "./pages/AttendanceRemarks";
+import TodayAttendance      from "./pages/TodayAttendance";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -187,6 +188,10 @@ function App() {
                 <Route
                     path="/client-off-management"
                     element={<RoleRoute roles={["admin"]}><ClientOffManagement /></RoleRoute>}
+                />
+                <Route
+                    path="/today-attendance"
+                    element={<RoleRoute roles={["admin"]}><TodayAttendance /></RoleRoute>}
                 />
             </Route>
 
