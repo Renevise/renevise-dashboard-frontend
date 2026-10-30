@@ -30,31 +30,41 @@ function StatusBadge({ status }) {
     return <span className={`mr-badge ${cls[status] || "mr-badge--pending"}`}>{status}</span>;
 }
 
+const HALF_DAY_TYPE   = "Half Day Leave";
+const EARLY_LEAVE_TYPE = "Early Leave";
+
 function LeaveList({ leaves, loading }) {
     if (loading) return <p className="mr-empty">Loading…</p>;
     if (!leaves.length) return <p className="mr-empty">No leave requests submitted yet.</p>;
     return (
         <div className="mr-list">
-            {leaves.map(req => (
-                <div key={req._id} className="mr-item">
-                    <div className="mr-item-left">
-                        <span className="mr-item-title">{req.leaveType}</span>
-                        <span className="mr-item-sub">
-                            {req.fromDate} &rarr; {req.untilDate}
-                            {req.days && (
-                                <span className="mr-days-pill">{req.days}d</span>
+            {leaves.map(req => {
+                const isHD = req.leaveType === HALF_DAY_TYPE;
+                const isEL = req.leaveType === EARLY_LEAVE_TYPE;
+                return (
+                    <div key={req._id} className="mr-item">
+                        <div className="mr-item-left">
+                            <span className="mr-item-title">{req.leaveType}</span>
+                            <span className="mr-item-sub">
+                                {isHD ? (
+                                    <>{req.fromDate}<span className="mr-days-pill">0.5d</span></>
+                                ) : isEL ? (
+                                    <>{req.fromDate} — Departs {req.departureTime}</>
+                                ) : (
+                                    <>{req.fromDate} &rarr; {req.untilDate}{req.days && <span className="mr-days-pill">{req.days}d</span>}</>
+                                )}
+                            </span>
+                            <span className="mr-item-reason">"{req.reason}"</span>
+                        </div>
+                        <div className="mr-item-right">
+                            <StatusBadge status={req.status} />
+                            {req.status !== "Pending" && req.reviewedBy && (
+                                <span className="mr-reviewer">by {req.reviewedBy}</span>
                             )}
-                        </span>
-                        <span className="mr-item-reason">"{req.reason}"</span>
+                        </div>
                     </div>
-                    <div className="mr-item-right">
-                        <StatusBadge status={req.status} />
-                        {req.status !== "Pending" && req.reviewedBy && (
-                            <span className="mr-reviewer">by {req.reviewedBy}</span>
-                        )}
-                    </div>
-                </div>
-            ))}
+                );
+            })}
         </div>
     );
 }

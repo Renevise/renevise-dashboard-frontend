@@ -77,11 +77,13 @@ export function useLeave() {
         init();
     }, [userId]); 
 
-    const applyLeave = useCallback(async ({ type, from, to, reason }) => {
+    const applyLeave = useCallback(async ({ type, from, to, reason, departureTime }) => {
+        const body = { leaveType: type, fromDate: from, untilDate: to, reason };
+        if (departureTime)  body.departureTime  = departureTime;
         const res = await fetch(`${API_BASE}/api/leave`, {
             method : "POST",
             headers: getAuthHeaders(),
-            body   : JSON.stringify({ leaveType: type, fromDate: from, untilDate: to, reason }),
+            body   : JSON.stringify(body),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || "Failed to submit leave request");

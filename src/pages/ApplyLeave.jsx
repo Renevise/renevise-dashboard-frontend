@@ -10,11 +10,15 @@ import "./ApplyLeave.css";
 
 const LEAVE_TYPES = leaveJson.types;
 
+const HALF_DAY_TYPE  = "Half Day Leave";
+const EARLY_LEAVE_TYPE = "Early Leave";
+
 const EMPTY_FORM = {
-    leaveType: LEAVE_TYPES[0],
-    fromDate : "",
-    untilDate: "",
-    reason   : "",
+    leaveType    : LEAVE_TYPES[0],
+    fromDate     : "",
+    untilDate    : "",
+    reason       : "",
+    departureTime: "",
 };
 
 function StatusBadge({ status }) {
@@ -27,7 +31,7 @@ function ApplyLeave() {
     const { leave }   = useApp();
     const { myLeaves, applyLeave } = leave;
 
-    const [form,       setForm]       = useState(EMPTY_FORM);
+    const [form,       setForm]       = useState({ ...EMPTY_FORM });
     const [errors,     setErrors]     = useState({});
     const [files,      setFiles]      = useState([]);
     const [dragOver,   setDragOver]   = useState(false);
@@ -50,15 +54,33 @@ function ApplyLeave() {
         setFiles(prev => prev.filter((_, i) => i !== idx));
     }
 
+    const isHalfDay    = form.leaveType === HALF_DAY_TYPE;
+    const isEarlyLeave = form.leaveType === EARLY_LEAVE_TYPE;
+
     function validate() {
         const errs = {};
-        if (!form.fromDate)  errs.fromDate  = "From date is required";
-        if (!form.untilDate) errs.untilDate = "Until date is required";
-        else if (form.fromDate && form.untilDate && form.untilDate < form.fromDate)
-            errs.untilDate = "Until date must be on or after from date";
-        else if (form.fromDate && form.untilDate && form.untilDate >= form.fromDate
-                 && countWorkingDays(form.fromDate, form.untilDate) === 0)
-            errs.untilDate = "The selected dates contain no working days. Saturday and Sunday are not chargeable leave days.";
+        if (!form.fromDate) errs.fromDate = "Date is required";
+
+        if (isHalfDay) {
+            const dow = new Date(form.fromDate + "T00:00:00").getDay();
+            if (form.fromDate && (dow === 0 || dow === 6))
+                errs.fromDate = "Cannot select a weekend day for Half Day Leave";
+        } else if (isEarlyLeave) {
+            if (!form.departureTime) errs.departureTime = "Expected departure time is required";
+            else {
+                const dow = new Date(form.fromDate + "T00:00:00").getDay();
+                if (form.fromDate && (dow === 0 || dow === 6))
+                    errs.fromDate = "Cannot select a weekend day for Early Leave";
+            }
+        } else {
+            if (!form.untilDate) errs.untilDate = "Until date is required";
+            else if (form.fromDate && form.untilDate && form.untilDate < form.fromDate)
+                errs.untilDate = "Until date must be on or after from date";
+            else if (form.fromDate && form.untilDate && form.untilDate >= form.fromDate
+                     && countWorkingDays(form.fromDate, form.untilDate) === 0)
+                errs.untilDate = "The selected dates contain no working days. Saturday and Sunday are not chargeable leave days.";
+        }
+
         if (!form.reason.trim()) errs.reason = "Please provide a reason for your leave";
         return errs;
     }
@@ -73,12 +95,13 @@ function ApplyLeave() {
         setSuccessMsg("");
         try {
             await applyLeave({
-                type  : form.leaveType,
-                from  : form.fromDate,
-                to    : form.untilDate,
-                reason: form.reason.trim(),
+                type          : form.leaveType,
+                from          : form.fromDate,
+                to            : isHalfDay || isEarlyLeave ? form.fromDate : form.untilDate,
+                reason        : form.reason.trim(),
+                departureTime : isEarlyLeave ? form.departureTime  : undefined,
             });
-            setForm(EMPTY_FORM);
+            setForm({ ...EMPTY_FORM });
             setFiles([]);
             setErrors({});
             setSuccessMsg("Leave request submitted successfully and is pending approval.");
@@ -163,10 +186,10 @@ function ApplyLeave() {
                                 </select>
                             </div>
 
-                            <div className="al-two-col">
+                            {(isHalfDay || isEarlyLeave) ? (
                                 <div className="al-field">
                                     <label className="al-label">
-                                        From date<span className="al-asterisk"> *</span>
+                                        Date<span className="al-asterisk"> *</span>
                                     </label>
                                     <input
                                         type="date"
@@ -177,23 +200,55 @@ function ApplyLeave() {
                                     />
                                     {errors.fromDate && <span className="al-field-error">{errors.fromDate}</span>}
                                 </div>
+                            ) : (
+                                <div className="al-two-col">
+                                    <div className="al-field">
+                                        <label className="al-label">
+                                            From date<span className="al-asterisk"> *</span>
+                                        </label>
+                                        <input
+                                            type="date"
+                                            name="fromDate"
+                                            value={form.fromDate}
+                                            onChange={handleChange}
+                                            className={`al-input${errors.fromDate ? " al-input--err" : ""}`}
+                                        />
+                                        {errors.fromDate && <span className="al-field-error">{errors.fromDate}</span>}
+                                    </div>
 
+                                    <div className="al-field">
+                                        <label className="al-label">
+                                            Until date<span className="al-asterisk"> *</span>
+                                        </label>
+                                        <input
+                                            type="date"
+                                            name="untilDate"
+                                            value={form.untilDate}
+                                            onChange={handleChange}
+                                            className={`al-input${errors.untilDate ? " al-input--err" : ""}`}
+                                        />
+                                        {errors.untilDate && <span className="al-field-error">{errors.untilDate}</span>}
+                                    </div>
+                                </div>
+                            )}
+
+                            {isEarlyLeave && (
                                 <div className="al-field">
                                     <label className="al-label">
-                                        Until date<span className="al-asterisk"> *</span>
+                                        Expected Departure Time<span className="al-asterisk"> *</span>
                                     </label>
                                     <input
-                                        type="date"
-                                        name="untilDate"
-                                        value={form.untilDate}
+                                        type="time"
+                                        name="departureTime"
+                                        value={form.departureTime}
                                         onChange={handleChange}
-                                        className={`al-input${errors.untilDate ? " al-input--err" : ""}`}
+                                        className={`al-input${errors.departureTime ? " al-input--err" : ""}`}
                                     />
-                                    {errors.untilDate && <span className="al-field-error">{errors.untilDate}</span>}
+                                    {errors.departureTime && <span className="al-field-error">{errors.departureTime}</span>}
                                 </div>
-                            </div>
+                            )}
 
-                            {(() => {
+                            {!isHalfDay && !isEarlyLeave && (() => {
                                 if (!form.fromDate || !form.untilDate || form.untilDate < form.fromDate) return null;
                                 const wd = countWorkingDays(form.fromDate, form.untilDate);
                                 if (wd === 0) return (
@@ -213,6 +268,20 @@ function ApplyLeave() {
                                     </div>
                                 );
                             })()}
+
+                            {isHalfDay && form.fromDate && (
+                                <div className="al-working-days-row">
+                                    <span className="al-working-days-pill">0.5 day deducted</span>
+                                    <span className="al-working-days-note">Half day leave balance deduction</span>
+                                </div>
+                            )}
+
+                            {isEarlyLeave && form.fromDate && (
+                                <div className="al-working-days-row">
+                                    <span className="al-working-days-pill">No balance deducted</span>
+                                    <span className="al-working-days-note">Early leave does not affect leave balance</span>
+                                </div>
+                            )}
 
                             <div className="al-field">
                                 <label className="al-label">
@@ -263,8 +332,13 @@ function ApplyLeave() {
                                         <div className="al-history-item-left">
                                             <span className="al-history-type">{req.leaveType}</span>
                                             <span className="al-history-dates">
-                                                {req.fromDate} &rarr; {req.untilDate}
-                                                <span className="al-history-days">{req.days}d</span>
+                                                {req.leaveType === HALF_DAY_TYPE ? (
+                                                    <>{req.fromDate}<span className="al-history-days">0.5d</span></>
+                                                ) : req.leaveType === EARLY_LEAVE_TYPE ? (
+                                                    <>{req.fromDate} &mdash; Departs {req.departureTime}</>
+                                                ) : (
+                                                    <>{req.fromDate} &rarr; {req.untilDate}<span className="al-history-days">{req.days}d</span></>
+                                                )}
                                             </span>
                                             <span className="al-history-reason">"{req.reason}"</span>
                                         </div>

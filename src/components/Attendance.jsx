@@ -203,11 +203,77 @@ function Attendance() {
             }
         }
 
-        const header = ["Employee", "Department", "Date", "Clock In", "Clock Out", "Break", "Hours", "Status", "Remarks", "Total On Time", "Total Late", "Total Half Day", "Total Early Leave", "Total Leaves"];
+        // --- Absent calculation ---
+        // Step 1: count past weekdays in the export month
+        const now2       = new Date();
+        const monthStart = new Date(expYear, expMonth - 1, 1);
+        const monthEnd   = new Date(expYear, expMonth, 0);
+        const countUntil = (expYear === now2.getFullYear() && expMonth === (now2.getMonth() + 1))
+            ? now2 : monthEnd;
+        let totalWeekdays = 0;
+        const allWeekdayDates = [];
+        { const c = new Date(monthStart);
+          while (c <= countUntil) {
+            const dow = c.getDay();
+            if (dow !== 0 && dow !== 6) {
+                totalWeekdays++;
+                allWeekdayDates.push(`${c.getFullYear()}-${pad(c.getMonth()+1)}-${pad(c.getDate())}`);
+            }
+            c.setDate(c.getDate() + 1);
+          }
+        }
+        // Step 2: company off weekdays in that month
+        const companyOffDateSet = new Set();
+        for (const co of coList) {
+            const c = new Date(co.fromDate + "T00:00:00");
+            const u = new Date(co.untilDate + "T00:00:00");
+            while (c <= u) {
+                const ds  = `${c.getFullYear()}-${pad(c.getMonth()+1)}-${pad(c.getDate())}`;
+                const dow = c.getDay();
+                if (ds.startsWith(exportMonth) && dow !== 0 && dow !== 6) companyOffDateSet.add(ds);
+                c.setDate(c.getDate() + 1);
+            }
+        }
+        const netWorkingDays = totalWeekdays - companyOffDateSet.size;
+
+        // Step 3: per-employee covered dates (attendance OR approved leave)
+        const empCoveredDates = {};
+        for (const r of attFiltered) {
+            if (r.isCompanyOff) continue;
+            const eid = r.employeeId ?? "";
+            if (!eid) continue;
+            if (!empCoveredDates[eid]) empCoveredDates[eid] = new Set();
+            empCoveredDates[eid].add(r.date);
+        }
+        for (const lv of (leave?.allLeaves ?? [])) {
+            if (lv.status !== "Approved") continue;
+            const eid = lv.userId?.toString() ?? "";
+            if (!eid) continue;
+            const c = new Date((lv.fromDate || lv.startDate) + "T00:00:00");
+            const u = new Date((lv.untilDate || lv.endDate)  + "T00:00:00");
+            while (c <= u) {
+                const ds = `${c.getFullYear()}-${pad(c.getMonth()+1)}-${pad(c.getDate())}`;
+                if (ds.startsWith(exportMonth)) {
+                    if (!empCoveredDates[eid]) empCoveredDates[eid] = new Set();
+                    empCoveredDates[eid].add(ds);
+                }
+                c.setDate(c.getDate() + 1);
+            }
+        }
+        const empAbsentMap = {};
+        for (const emp of employees.filter(e => e.role !== "admin")) {
+            const eid     = emp._id?.toString() ?? "";
+            const covered = empCoveredDates[eid]?.size ?? 0;
+            empAbsentMap[eid] = Math.max(0, netWorkingDays - covered);
+        }
+        // --- end absent calculation ---
+
+        const header = ["Employee", "Department", "Date", "Clock In", "Clock Out", "Break", "Hours", "Status", "Remarks", "Total On Time", "Total Late", "Total Half Day", "Total Early Leave", "Total Leaves", "Total Absent"];
         const rows   = attFiltered.map(r => {
             const eid    = r.employeeId ?? "";
             const st     = empStatsMap[eid] ?? { present: 0, late: 0, half: 0, early: 0 };
             const leaves = empLeavesMap[eid] ?? 0;
+            const absent = empAbsentMap[eid] ?? 0;
             return [
                 r.employee,
                 getRowDept(r),
@@ -223,6 +289,7 @@ function Attendance() {
                 r.isCompanyOff ? "—" : st.half,
                 r.isCompanyOff ? "—" : st.early,
                 r.isCompanyOff ? "—" : leaves,
+                r.isCompanyOff ? "—" : absent,
             ];
         });
 
@@ -250,6 +317,7 @@ function Attendance() {
             const summaryHeader = [
                 "Employee", "Department",
                 "Present Days", "Late Days", "Half Days", "Early Leave",
+                "Absent Days",
                 "Leaves Used (Year)", "Remaining Leaves",
             ];
 
@@ -265,6 +333,7 @@ function Attendance() {
                     const late       = empRecs.filter(r => r.isLate).length;
                     const halfDay    = empRecs.filter(r => r.status === "Half Day"    && !r.isLate).length;
                     const earlyLeave = empRecs.filter(r => r.status === "Early Leave" && !r.isLate).length;
+                    const absent     = empAbsentMap[empId] ?? 0;
 
                     const allEmpLeaves = allLeaves.filter(l => l.userId?.toString() === empId);
                     const leaveStats   = calcLeaveStats(allEmpLeaves, currentYear, currentMonth);
@@ -276,6 +345,7 @@ function Attendance() {
                         late,
                         halfDay,
                         earlyLeave,
+                        absent,
                         leaveStats.yearlyUsed,
                         leaveStats.balance,
                     ];
@@ -285,6 +355,7 @@ function Attendance() {
             ws2["!cols"] = [
                 { wch: 22 }, { wch: 14 },
                 { wch: 13 }, { wch: 10 }, { wch: 10 }, { wch: 12 },
+                { wch: 12 },
                 { wch: 18 }, { wch: 16 },
             ];
             XLSX.utils.book_append_sheet(wb, ws2, "Employee Summary");

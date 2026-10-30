@@ -24,6 +24,11 @@ export function calcLeaveStats(leaves, targetYear, targetMonth) {
     let monthlyUsed = 0;
 
     for (const l of leaves.filter(l => l.status === "Approved")) {
+        if (l.leaveType === "Early Leave") continue;
+
+        const isHalfDay = l.leaveType === "Half Day Leave";
+        const increment = isHalfDay ? 0.5 : 1;
+
         const from  = new Date(l.fromDate  + "T00:00:00");
         const until = new Date(l.untilDate + "T00:00:00");
         const cur   = new Date(from);
@@ -34,8 +39,8 @@ export function calcLeaveStats(leaves, targetYear, targetMonth) {
                 const y = cur.getFullYear();
                 const m = cur.getMonth() + 1;
                 if (y === targetYear) {
-                    yearlyUsed++;
-                    if (m === targetMonth) monthlyUsed++;
+                    yearlyUsed  += increment;
+                    if (m === targetMonth) monthlyUsed += increment;
                 }
             }
             cur.setDate(cur.getDate() + 1);

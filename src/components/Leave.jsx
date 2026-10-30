@@ -14,10 +14,16 @@ function StatusBadge({ status }) {
     return <span className={`lv-badge ${cls}`}>{status}</span>;
 }
 
+const HALF_DAY_TYPE   = "Half Day Leave";
+const EARLY_LEAVE_TYPE = "Early Leave";
+
 function LeaveCard({ req, isAdmin, onReview }) {
     const appliedDate = new Date(req.createdAt).toLocaleDateString("en-US", {
         year: "numeric", month: "short", day: "numeric",
     });
+
+    const isHalfDay    = req.leaveType === HALF_DAY_TYPE;
+    const isEarlyLeave = req.leaveType === EARLY_LEAVE_TYPE;
 
     return (
         <div className={`lv-card${req.status === "Pending" ? " pending-card" : ""}`}>
@@ -32,10 +38,13 @@ function LeaveCard({ req, isAdmin, onReview }) {
             <div className="lv-card-body">
                 <p className="lv-type">{req.leaveType}</p>
                 <div className="lv-dates">
-                    <span>{req.fromDate}</span>
-                    <span className="lv-arrow">→</span>
-                    <span>{req.untilDate}</span>
-                    <span className="lv-days">{req.days}d</span>
+                    {isHalfDay ? (
+                        <><span>{req.fromDate}</span><span className="lv-days">0.5d</span></>
+                    ) : isEarlyLeave ? (
+                        <><span>{req.fromDate}</span><span className="lv-arrow">—</span><span>Departs {req.departureTime}</span></>
+                    ) : (
+                        <><span>{req.fromDate}</span><span className="lv-arrow">→</span><span>{req.untilDate}</span><span className="lv-days">{req.days}d</span></>
+                    )}
                 </div>
                 <p className="lv-reason">"{req.reason}"</p>
                 {req.status !== "Pending" && req.reviewedBy && (
@@ -94,21 +103,30 @@ function AdminReviewedTable({ list }) {
                                 </td>
                             </tr>
                         ) : (
-                            pageData.map(req => (
-                                <tr key={req._id}>
-                                    <td className="lv-emp-name">{req.employee}</td>
-                                    <td>{req.leaveType}</td>
-                                    <td>{req.fromDate}</td>
-                                    <td>{req.untilDate}</td>
-                                    <td>
-                                        <span className="lv-days-badge">{req.days}d</span>
-                                    </td>
-                                    <td><StatusBadge status={req.status} /></td>
-                                    <td className="lv-reviewed-by">
-                                        {req.reviewedBy || <span style={{ color: "rgba(255,255,255,0.2)" }}>—</span>}
-                                    </td>
-                                </tr>
-                            ))
+                            pageData.map(req => {
+                                const isHD = req.leaveType === HALF_DAY_TYPE;
+                                const isEL = req.leaveType === EARLY_LEAVE_TYPE;
+                                return (
+                                    <tr key={req._id}>
+                                        <td className="lv-emp-name">{req.employee}</td>
+                                        <td>{req.leaveType}</td>
+                                        <td>{req.fromDate}</td>
+                                        <td>{isHD || isEL ? <span style={{ color: "rgba(255,255,255,0.35)" }}>—</span> : req.untilDate}</td>
+                                        <td>
+                                            {isHD
+                                                ? <span className="lv-days-badge">0.5d</span>
+                                                : isEL
+                                                    ? <span className="lv-days-badge">{req.departureTime}</span>
+                                                    : <span className="lv-days-badge">{req.days}d</span>
+                                            }
+                                        </td>
+                                        <td><StatusBadge status={req.status} /></td>
+                                        <td className="lv-reviewed-by">
+                                            {req.reviewedBy || <span style={{ color: "rgba(255,255,255,0.2)" }}>—</span>}
+                                        </td>
+                                    </tr>
+                                );
+                            })
                         )}
                     </tbody>
                 </table>
@@ -138,9 +156,11 @@ function AdminReviewedTable({ list }) {
 }
 
 function ReviewModal({ req, onApprove, onReject, onClose, loading, error }) {
-    const appliedDate = new Date(req.createdAt).toLocaleDateString("en-US", {
+    const appliedDate  = new Date(req.createdAt).toLocaleDateString("en-US", {
         year: "numeric", month: "long", day: "numeric",
     });
+    const isHalfDay    = req.leaveType === HALF_DAY_TYPE;
+    const isEarlyLeave = req.leaveType === EARLY_LEAVE_TYPE;
 
     return (
         <div className="lv-overlay" onClick={onClose}>
@@ -170,18 +190,26 @@ function ReviewModal({ req, onApprove, onReject, onClose, loading, error }) {
                             <span className="lv-modal-val">{req.leaveType}</span>
                         </div>
                         <div className="lv-modal-row">
-                            <span className="lv-modal-key">From</span>
+                            <span className="lv-modal-key">Date</span>
                             <span className="lv-modal-val">{req.fromDate}</span>
                         </div>
+                        {!isHalfDay && !isEarlyLeave && (
+                            <div className="lv-modal-row">
+                                <span className="lv-modal-key">Until</span>
+                                <span className="lv-modal-val">{req.untilDate}</span>
+                            </div>
+                        )}
+                        {isEarlyLeave && (
+                            <div className="lv-modal-row">
+                                <span className="lv-modal-key">Departure</span>
+                                <span className="lv-modal-val">{req.departureTime}</span>
+                            </div>
+                        )}
                         <div className="lv-modal-row">
-                            <span className="lv-modal-key">Until</span>
-                            <span className="lv-modal-val">{req.untilDate}</span>
-                        </div>
-                        <div className="lv-modal-row">
-                            <span className="lv-modal-key">Total Days</span>
+                            <span className="lv-modal-key">Deduction</span>
                             <span className="lv-modal-val">
                                 <span className="lv-modal-days-badge">
-                                    {req.days} day{req.days !== 1 ? "s" : ""}
+                                    {isHalfDay ? "0.5 day" : isEarlyLeave ? "None" : `${req.days} day${req.days !== 1 ? "s" : ""}`}
                                 </span>
                             </span>
                         </div>
